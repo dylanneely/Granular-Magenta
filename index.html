@@ -11,19 +11,94 @@
     <link rel="stylesheet" href="style.css">
 
     <!-- import the webpage's javascript file -->
+    <audio controls></audio>
     <script src="https://cdn.jsdelivr.net/npm/tone@14.7.39/build/Tone.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/nexusui@2.0.13/dist/NexusUI.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tensorflow/1.2.8/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.19.0/es6/core.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.19.0/es6/music_rnn.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.19.0/es6/music_vae.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"></script>
+<!--    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/0.7.3/addons/p5.sound.min.js"></script>-->
     <script src="gransampler.js" defer></script>
+    <script src="p5jsrecording.js" defer></script>
+
   </head>
   <body>
-    <button id="play">
-      Play
-    </button>
+
+    <div class="row">
+      <div class="columnleft" style="background-color:#FFB695;">
+
+          <div id="grains">
+            Grain Start / Length
+            <div nexus-ui ="position" id ="grain1control"></div>
+            <div nexus-ui ="position" id ="grain2control"></div>
+            <div nexus-ui ="position" id ="grain3control"></div>
+            <div nexus-ui ="position" id ="grain4control"></div>
+          </div>
+      </div>
+      <div class="columncenterL" style="background-color:#96D1CD;">
+
+          <div id="grainsSize">
+            Grain Size / Overlap
+            <div nexus-ui ="position" id ="grain1bcontrol"></div>
+            <div nexus-ui ="position" id ="grain2bcontrol"></div>
+            <div nexus-ui ="position" id ="grain3bcontrol"></div>
+            <div nexus-ui ="position" id ="grain4bcontrol"></div>
+          </div>
+      </div>
+      <div class="columncenter" style="background-color:#FFB695;">
+
+          <div id="grains2">
+            Grain Start / Length 5 - 8
+            <div nexus-ui ="position" id ="grain5control"></div>
+            <div nexus-ui ="position" id ="grain6control"></div>
+            <div nexus-ui ="position" id ="grain7control"></div>
+            <div nexus-ui ="position" id ="grain8control"></div>
+          </div>
+      </div>
+      <div class="columncenterR" style="background-color:#96D1CD;">
+
+          <div id="grainsSize2">
+            Grain Size / Overlap 5 - 8
+            <div nexus-ui ="position" id ="grain5bcontrol"></div>
+            <div nexus-ui ="position" id ="grain6bcontrol"></div>
+            <div nexus-ui ="position" id ="grain7bcontrol"></div>
+            <div nexus-ui ="position" id ="grain8bcontrol"></div>
+          </div>
+      </div>
+      <div class="columnright" style="background-color:#FFFF00;">
+        <div nexus-ui="button" id="start" style="padding-bottom: 50px">
+          Start / Stop
+        </div>
+        <div nexus-ui="radiobutton" id ="radiobutton" style="padding-bottom: 15px">
+          Generate Parts
+        </div>
+        <div nexus-ui="dropdown" id ="dropdown" accept="audio/*" style="padding-bottom: 15px">
+        </div>
+        <input type="file" id="load"></input >
+        <audio id="sound"></audio>
+        <div nexus-ui="textbutton" id="record" style="padding: 15px 0px 15px 0px">
+        </div>
+        <div nexus-ui="textbutton" id="recordmic">
+        </div>
+        <div id="volumes" >
+          Volumes
+          <div nexus-ui ="slider" id ="volume1"></div>
+          <div nexus-ui ="slider" id ="volume2"></div>
+          <div nexus-ui ="slider" id ="volume3"></div>
+          <div nexus-ui ="slider" id ="volume4"></div>
+          <div nexus-ui ="slider" id ="volume5"></div>
+          <div nexus-ui ="slider" id ="volume6"></div>
+          <div nexus-ui ="slider" id ="volume7"></div>
+          <div nexus-ui ="slider" id ="volume8"></div>
+        </div>
+      </div>
+
+
+
+
+
 
   </body>
 </html>

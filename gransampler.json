@@ -1,7 +1,7 @@
 [
     {
-      "origin": ["https://storage.googleapis.com/audioassets/"],
-      "method": ["PUT"],
+      "origin": ["http://0.0.0.0:8000/"],
+      "method": ["GET"],
       "responseHeader": ["Access-Control-Allow-Origin"],
       "maxAgeSeconds": 3600
     }
