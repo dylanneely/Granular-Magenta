@@ -1,5 +1,4 @@
 
-//TO DO: Create melody from granular synthesis
 //TO DO: PLAY WITH playbackRate, detune, filters, generally try to make it sound better
 
 // let clock = new Tone.Clock(function(time){ //auto do something every 30 seconds

@@ -1,13 +1,14 @@
-let state = 0;
-let patternStarted = false;
-let sampler;
 let buffers;
 let slicedur;
 
 let verb;
 let userAudio;
-let startArray;
-let zip;
+let startArray = [];
+let synthTimeArray = [];
+let zip = [];
+let patternArray = [];
+let patternArrayOffset = [];
+let start_note = 60;
 
 const audio = document.querySelector('audio');
 const actx  = Tone.context;
@@ -20,15 +21,9 @@ let grain_list = ["grain1", "grain2", "grain3", "grain4", "grain5", "grain6", "g
 let pitchShiftList = ["pitchShift1", "pitchShift2", "pitchShift3", "pitchShift4", "pitchShift5", "pitchShift6", "pitchShift7", "pitchShift8"];
 let volumeList = ["volume1","volume2","volume3","volume4","volume5","volume6","volume7","volume8"]
 
-
+let states_array = [];
+let patternList = ["pattern1", "pattern2", "pattern3", "pattern4", "pattern5", "pattern6", "pattern7", "pattern8"]
 //
-sampler = new Tone.Sampler({
-          urls: {
-            C2: "Vessel1.wav",
-            C3: "Bowl1.wav",
-        },
-          baseUrl: baseURL
-        });
 buffers = new Tone.ToneAudioBuffers({
            urls: buf_list,
            baseUrl: baseURL
@@ -43,27 +38,45 @@ for (pitchShift in pitchShiftList) {
   }
 
 for (volume in volumeList) {
-      volumeList[volume] = new Tone.Volume(0);
+      volumeList[volume] = new Tone.Volume(-6);
     }
 
+for (pattern in patternList) {
+      patternList[pattern] = new Tone.Part();
+    }
+
+let randomSeed = randomMIDIpitch(24, 36); //range, offset
+let randomInterval1 = randomMIDIpitch(3, 7);
+let randomInterval2 = randomMIDIpitch(3, 7);
+let seedChordMIDI = [randomSeed, randomSeed + randomInterval1, randomSeed + randomInterval1 + randomInterval2]
+let seedChordFreq = [Tone.Frequency(seedChordMIDI[0], "midi"), Tone.Frequency(seedChordMIDI[1], "midi"), Tone.Frequency(seedChordMIDI[2], "midi")];
+
 verb = new Tone.Reverb(4);
-const pingPong = new Tone.PingPongDelay("4n", 0.5).toDestination();
+const pingPong = new Tone.PingPongDelay("4n", 0.5);
+
+const filter = new Tone.Filter(1500, "lowpass");
 
 for (let i = 0; i < grain_list.length; i++) {
-    grain_list[i].chain(pitchShiftList[i], volumeList[i], pingPong, verb);
-    grain_list[i].loop = true;
+    grain_list[i].chain(pitchShiftList[i], volumeList[i], pingPong, filter, verb);
+    grain_list[i].sync();
+    //grain_list[i].loop = true;
   }
 
+let synth = new Tone.AMSynth();
+synth.sync();
+let synth_drone = new Tone.PolySynth();
+const autoFilter = new Tone.AutoFilter(0.1).start();
 
-
-sampler.connect(verb);
 verb.toDestination();
 verb.connect(dest);
 
+synth.connect(verb);
+synth_drone.chain(autoFilter, verb);
+synth_drone.volume.value = -12;
+synth.connect(dest);
 
   //TO DO: Add IR Reverb / convolution
   //const convolver = new Tone.Convolver("./path/to/ir.wav").toDestination();
-
 
 function setup() {
   // let cnv = createCanvas(100, 100);
@@ -72,17 +85,16 @@ function setup() {
 
 }
 
-
 //HELPER FUNCTIONS
-function loopsize(x, y) {
-  slicedur = buffers.get(0).duration;
+function loopsize(x, y, num) {
+  slicedur = buffers.get(num).duration;
 	let start = slicedur  * x;
 	let end = (start + (slicedur * (1-y)+0.001)) % slicedur;
   return [start, end];
 }
 
-function randomMIDIpitch() { //random MIDI in acceptable range
-  let randompitch = Math.floor(Math.random() * 60 + 36);
+function randomMIDIpitch(range, offset) { //random MIDI in acceptable range
+  let randompitch = Math.floor(Math.random() * range + offset);
   return randompitch;
 }
 
@@ -102,37 +114,40 @@ let melodyRnnLoaded = melodyRnn.initialize();
 
 async function generateMelody() {
   //randomized seed. TO DO: create logical seed based on grains
+
   let seed = {
     notes: [
-      {pitch: randomMIDIpitch(), quantizedStartStep: 0, quantizedEndStep: 1}, {pitch: randomMIDIpitch(), quantizedStartStep: 1, quantizedEndStep: 2},
+      {pitch: seedChordMIDI[0], quantizedStartStep: 0, quantizedEndStep: 1}, {pitch: seedChordMIDI[1], quantizedStartStep: 1, quantizedEndStep: 3},
+      {pitch: seedChordMIDI[2], quantizedStartStep: 3, quantizedEndStep: 5},
     ],
-    totalQuantizedSteps: 2,
+    totalQuantizedSteps: 4,
     quantizationInfo: { stepsPerQuarter: 4}
   };
-  let steps = Math.floor(Math.random() * 36 + 12);
+  let steps = randomMIDIpitch(36, 12);
   let temperature = 1.2;
 
   let result = await melodyRnn.continueSequence(seed, steps, temperature);
 
   let combined = core.sequences.concatenate([seed, result]);
   //console.log(combined.notes);
-  grain1detuneArray = []
-  patternArray = []
-  startArray = []
-  let start_note = combined.notes[0].pitch;
+  start_note = combined.notes[0].pitch;
   console.log("start note: " +  start_note);
   for (let note of combined.notes) {
-  grain1detuneArray.push(note.pitch*0.1);
-//  patternArray.push(note.pitch); //STRAIGHTFORWARD NOTE GENERATION
-  patternArray.push(note.pitch - start_note); //OFFSET for pitchshifting
+  patternArray.push(note.pitch); //STRAIGHTFORWARD NOTE GENERATION
   startArray.push(note.quantizedStartStep / 4); //find a good or logical divisor
   }
   zip = startArray.map(function(e,i){return [e,patternArray[i]];}); //no zip function in js!
+
+  //SET NEW SEED
+  synth_drone.triggerRelease(seedChordFreq);
+  seedChordMIDI = patternArray.slice((patternArray.length - 3), patternArray.length);
+  for (let i = 0; i < 3; i++) {
+    seedChordFreq[i] = Tone.Frequency(seedChordMIDI[i], "midi");
+  }
+  synth_drone.triggerAttack(seedChordFreq);
 }
 
-
 //UI Elements
-
 
 let startButton = new Nexus.Button('#start',{
   'size': [80,80],
@@ -143,15 +158,20 @@ let startButton = new Nexus.Button('#start',{
 startButton.on('change',async function(v) {
   if (v == true) {
   await Tone.start();
-  sampler.triggerAttackRelease(["C1, C3"], 1, 2);
+  console.log(v);
   Tone.Transport.start();
+  synth_drone.triggerAttack(seedChordFreq, 0);
 }
 else {
   Tone.Transport.stop();
+  console.log("stopped");
+  synth_drone.triggerRelease(seedChordFreq);
   for (grain in grain_list) {
     if (grain_list[grain].state == "started") {	grain_list[grain].stop(); grain_list[grain].state = "stopped";}
   }
   if (recorder.state == "active") {recorder.stop();}
+
+
 }
 })
 
@@ -199,7 +219,6 @@ recordMic.on('change',async function(v) {
   }
 })
 
-// }
 //LOADS SOUND
 
 load.onchange = function() {
@@ -211,18 +230,17 @@ load.onchange = function() {
     buf_list[8] = "User Sound"; //should grab file name
     //buffers.get("[object HTMLAudioElement]").key = "8";
     dropdown.defineOptions(Object.values(buf_list));
-    userAudio = new Tone.ToneAudioBuffer(buffer);
-    dropdown.selectedIndex = 8;
+    userAudio = new Tone.ToneAudioBuffer(buffer); //Created new buffer, because
+    dropdown.selectedIndex = 8;               //accessing the added buffer to buffers
+  //buffers.get("[object HTMLAudioElement]").key = "8";  //by dictionary was tricky
   });
 
   };
   reader.readAsArrayBuffer(this.files[0]);
   console.log(buffers);
   };
-
 let grainsControl = new Nexus.Rack("#grains");
 let grainsControl2 = new Nexus.Rack("#grains2");
-
 
 //TO DO: CREATE ARRAY FOR GRAIN CONTROLS - FIRST ATTEMT DIDN'T WORK WITH NEXUS, SO CLUNKY RIGHT NOW
 grainsControl.grain1control.colorize("fill","#333")
@@ -373,55 +391,55 @@ grainsControlSize2.grain8bcontrol.minY = 0.0001;
 grainsControlSize2.grain8bcontrol.minX = 0.0001;
 grainsControlSize2.grain8bcontrol.maxY = 0.4;
 
-
 let volumes = new Nexus.Rack("#volumes"); //REORIENT VERTICAL
 
 //for (volume in volumeList) { //AUTOMATIC ASSIGNMENT DOESN'T WORK WITH NEXUSUI
+
+let minVol = -120; let maxVol = 12; let defVol = -6;
 volumes.volume1.resize(150, 25);
-volumes.volume1.min = -60;
-volumes.volume1.max = 12;
-volumes.volume1.value = 0;
+volumes.volume1.min = minVol;
+volumes.volume1.max = maxVol;
+volumes.volume1.value = defVol;
 
 volumes.volume2.resize(150, 25);
-volumes.volume2.min = -60;
-volumes.volume2.max = 12;
-volumes.volume2.value = 0;
+volumes.volume2.min = minVol;
+volumes.volume2.max = maxVol;
+volumes.volume2.value = defVol;
 
 volumes.volume3.resize(150, 25);
-volumes.volume3.min = -60;
-volumes.volume3.max = 12;
-volumes.volume3.value = 0;
+volumes.volume3.min = minVol;
+volumes.volume3.max = maxVol;
+volumes.volume3.value = defVol;
 
 volumes.volume4.resize(150, 25);
-volumes.volume4.min = -60;
-volumes.volume4.max = 12;
-volumes.volume4.value = 0;
+volumes.volume4.min = minVol;
+volumes.volume4.max = maxVol;
+volumes.volume4.value = defVol;
 
 volumes.volume5.resize(150, 25);
-volumes.volume5.min = -60;
-volumes.volume5.max = 12;
-volumes.volume5.value = 0;
+volumes.volume5.min = minVol;
+volumes.volume5.max = maxVol;
+volumes.volume5.value = defVol;
 
 volumes.volume6.resize(150, 25);
-volumes.volume6.min = -60;
-volumes.volume6.max = 12;
-volumes.volume6.value = 0;
+volumes.volume6.min = minVol;
+volumes.volume6.max = maxVol;
+volumes.volume6.value = defVol;
 
 volumes.volume7.resize(150, 25);
-volumes.volume7.min = -60;
-volumes.volume7.max = 12;
-volumes.volume7.value = 0;
+volumes.volume7.min =  minVol;
+volumes.volume7.max = maxVol;
+volumes.volume7.value = defVol;
 
 volumes.volume8.resize(150, 25);
-volumes.volume8.min = -60;
-volumes.volume8.max = 12;
-volumes.volume8.value = 0;
+volumes.volume8.min = minVol;
+volumes.volume8.max = maxVol;
+volumes.volume8.value = defVol;
 
 let radiobutton = new Nexus.RadioButton('#radiobutton',{
   'size': [200,50],
-  'mode': 'relative',
+  'mode': 'toggle',
   'numberOfButtons': 8,
-  'active': -1
 })
 
 let dropdown = new Nexus.Select('#dropdown',{
@@ -441,7 +459,7 @@ dropdown.on('change',async function(v) {
       let curState = states_array[states_array.length-1]
       grain_list[curState].buffer = userAudio;
       grain_list[curState].start();
-      console.log(grain_list[key])
+      console.log(grain_list[curState])
     }
   }
   else { for (key in buf_list) {
@@ -463,25 +481,22 @@ dropdown.on('change',async function(v) {
 }
 });
 
-let states_array = [];
-let patternList = ["pattern1", "pattern2", "pattern3", "pattern4", "pattern5", "pattern6", "pattern7", "pattern8"]
 grainsControl.grain1control.on('change', function(v) //AS ABOVE - MANUALLY SETTING FOR EACH BECAUSE OF NEXUS ASSIGNMENT ISSUE
-        {let startend = loopsize(v.x, v.y); grain_list[0].loopStart = startend[0]; grain_list[0].loopEnd = startend[1];});
+        {let startend = loopsize(v.x, v.y, 0); grain_list[0].loopStart = startend[0]; grain_list[0].loopEnd = startend[1];});
 grainsControl.grain2control.on('change', function(v)
-        {let startend = loopsize(v.x, v.y); grain_list[1].loopStart = startend[0]; grain_list[1].loopEnd = startend[1];});
+        {let startend = loopsize(v.x, v.y, 1); grain_list[1].loopStart = startend[0]; grain_list[1].loopEnd = startend[1];});
 grainsControl.grain3control.on('change', function(v)
-        {let startend = loopsize(v.x, v.y); grain_list[2].loopStart = startend[0]; grain_list[2].loopEnd = startend[1];});
+        {let startend = loopsize(v.x, v.y, 2); grain_list[2].loopStart = startend[0]; grain_list[2].loopEnd = startend[1];});
 grainsControl.grain4control.on('change', function(v)
-        {let startend = loopsize(v.x, v.y); grain_list[3].loopStart = startend[0]; grain_list[3].loopEnd = startend[1];});
+        {let startend = loopsize(v.x, v.y, 3); grain_list[3].loopStart = startend[0]; grain_list[3].loopEnd = startend[1];});
 grainsControl2.grain5control.on('change', function(v) //AS ABOVE - MANUALLY SETTING FOR EACH BECAUSE OF NEXUS ASSIGNMENT ISSUE
-       {let startend = loopsize(v.x, v.y); grain_list[4].loopStart = startend[0]; grain_list[0].loopEnd = startend[1];});
+       {let startend = loopsize(v.x, v.y, 4); grain_list[4].loopStart = startend[0]; grain_list[4].loopEnd = startend[1];});
 grainsControl2.grain6control.on('change', function(v)
-       {let startend = loopsize(v.x, v.y); grain_list[5].loopStart = startend[0]; grain_list[1].loopEnd = startend[1];});
+       {let startend = loopsize(v.x, v.y, 5); grain_list[5].loopStart = startend[0]; grain_list[5].loopEnd = startend[1];});
 grainsControl2.grain7control.on('change', function(v)
-       {let startend = loopsize(v.x, v.y); grain_list[6].loopStart = startend[0]; grain_list[2].loopEnd = startend[1];});
+       {let startend = loopsize(v.x, v.y, 6); grain_list[6].loopStart = startend[0]; grain_list[6].loopEnd = startend[1];});
 grainsControl2.grain8control.on('change', function(v)
-       {let startend = loopsize(v.x, v.y); grain_list[7].loopStart = startend[0]; grain_list[3].loopEnd = startend[1];});
-
+       {let startend = loopsize(v.x, v.y, 7); grain_list[7].loopStart = startend[0]; grain_list[7].loopEnd = startend[1];});
 
 grainsControlSize.grain1bcontrol.on('change', function(v)
         {	grain_list[0].grainSize = v.x; grain_list[0].overlap = v.y;});
@@ -493,113 +508,62 @@ grainsControlSize.grain4bcontrol.on('change', function(v)
         {	grain_list[3].grainSize = v.x; grain_list[3].overlap = v.y;});
 grainsControlSize2.grain5bcontrol.on('change', function(v)
         {	grain_list[4].grainSize = v.x; grain_list[4].overlap = v.y;});
-grainsControlSize2.grain2bcontrol.on('change', function(v)
+grainsControlSize2.grain6bcontrol.on('change', function(v)
         {	grain_list[5].grainSize = v.x; grain_list[5].overlap = v.y;});
-grainsControlSize2.grain3bcontrol.on('change', function(v)
+grainsControlSize2.grain7bcontrol.on('change', function(v)
         {	grain_list[6].grainSize = v.x; grain_list[6].overlap = v.y;});
-grainsControlSize2.grain4bcontrol.on('change', function(v)
+grainsControlSize2.grain8bcontrol.on('change', function(v)
         {	grain_list[7].grainSize = v.x; grain_list[7].overlap = v.y;});
 
 // for (let index = 0; index < volumeList.length; index++) { NOT WORKING WITH ASSIGNMENT TO NEXUSUI
-//   console.log(volumeList[index]);
-//   volumes.volumeList[index].on('change', function(v) {grain_list[index].volume.value = v;});
+
 // }
-volumes.volume1.on('change', function(v) {grain_list[0].volume.rampTo(v,.1)});
-volumes.volume2.on('change', function(v) {grain_list[1].volume.rampTo(v,.1)});
-volumes.volume3.on('change', function(v) {grain_list[2].volume.rampTo(v,.1)});
-volumes.volume4.on('change', function(v) {grain_list[3].volume.rampTo(v,.1)});
-volumes.volume5.on('change', function(v) {grain_list[4].volume.rampTo(v,.1)});
-volumes.volume6.on('change', function(v) {grain_list[5].volume.rampTo(v,.1)});
-volumes.volume7.on('change', function(v) {grain_list[6].volume.rampTo(v,.1)});
-volumes.volume8.on('change', function(v) {grain_list[7].volume.rampTo(v,.1)});
+volumes.volume1.on('change', function(v) {volumeList[0].volume.rampTo(v,.1)});
+volumes.volume2.on('change', function(v) {volumeList[1].volume.rampTo(v,.1)});
+volumes.volume3.on('change', function(v) {volumeList[2].volume.rampTo(v,.1)});
+volumes.volume4.on('change', function(v) {volumeList[3].volume.rampTo(v,.1)});
+volumes.volume5.on('change', function(v) {volumeList[4].volume.rampTo(v,.1)});
+volumes.volume6.on('change', function(v) {volumeList[5].volume.rampTo(v,.1)});
+volumes.volume7.on('change', function(v) {volumeList[6].volume.rampTo(v,.1)});
+volumes.volume8.on('change', function(v) {volumeList[7].volume.rampTo(v,.1)});
 
-radiobutton.on('change',async function(v) { //TO DO: ORGANIZE WITH PATTERN LIST - EXPAND TO 8
+
+radiobutton.on('change', async function(v) {
+  if (v > -1) {
   await Tone.start();
-  Tone.Transport.start();
-  for (pattern in patternsList)
-  if (v == 0 && states_array.includes(0)) {
-    console.log("stop pattern 1");
-    pattern1.stop(); grain_list[0].stop();
-    const index = states_array.indexOf(v);
-    states_array.splice(index, 1);
-  } else if (v == 0) {
-    states_array.push(v);
-    console.log(states_array + " grain 1 started!" + console.log(grain_list[0]));
-
+  if (Tone.Transport.state = "stopped" || "paused") {Tone.Transport.start();};
+  for (pattern in patternList)
+  if (v == pattern && states_array.includes(v))
+  {
+    console.log("stop " + patternList[pattern]);
+    patternList[pattern].stop(); //patternList[pattern].clear();
+    grain_list[pattern].stop();
+    states_array.splice(states_array.indexOf(v), 1);
+  } else if (v == pattern) {
+    console.log(" grain " + v + " started!");
     generateMelody().then((e)=> {
-    pattern1 = new Tone.Part(((time, note) => {
-        pitchShiftList[0].pitch = note;
-        grain_list[0].start();
-        console.log(pitchShiftList[0]);
+    //  const lfo = new Tone.LFO(3, 0.5, 3).start();
+      patternList[pattern] = new Tone.Part(((time, note) => {
+        pitchShiftList[v].pitch = (note - start_note);
+        synth.triggerAttackRelease(Tone.Frequency(note, "midi"), "1n", time);
+        grain_list[v].start(time);
+        //lfo.connect(synth.harmonicity);
     }), zip);
-    pattern1.loopStart = 0;
-    pattern1.loopEnd = start[start.length - 1];
-    pattern1.loop = true;
-    pattern1.start();
-    console.log(pattern1);
-  })
+      patternList[pattern].loopStart = 0;
+      patternList[pattern].loopEnd = start[start.length - 1];
+      patternList[pattern].loop = true;
+      patternList[pattern].start();
+      console.log(patternList[pattern]);
+      synth.playbackRate = 0.5;
+      states_array.push(v);
+    })
   }
-  else if (v == 1 && states_array.includes(1)) {
-    console.log("stop pattern 2");
-    pattern2.stop();         grain_list[1].stop();
-    const index = states_array.indexOf(v);
-    states_array.splice(index, 1);
-  } else if (v == 1) {
-    states_array.push(v);
-    console.log(states_array);
-    generateMelody().then((e)=> {
-    pattern2 = new Tone.Part(((time, note) => {
-        pitchShiftList[1].pitch = note;
-        grain_list[1].start();
-        console.log(note);
-    }), zip);
-    pattern2.loopStart = 0;
-    pattern2.loopEnd = startArray[startArray.length - 1];
-    pattern2.loop = true;
-    pattern2.start();
-    console.log(pattern2);
-  })
-  }
-else if (v == 2 && states_array.includes(2)) {
-  console.log("stop pattern 3");
-  pattern3.stop(); grain_list[2].stop();
-  const index = states_array.indexOf(v);
-  states_array.splice(index, 1);
-} else if (v == 2) {
-  states_array.push(v);
-  console.log(states_array);
-  generateMelody().then((e)=> {
-  pattern3 = new Tone.Part(((time, note) => {
-    pitchShiftList[2].pitch = note;
-    grain_list[2].start();
-  //  console.log(note);
-  }), zip);
-  pattern3.loopStart = 0;
-  pattern3.loopEnd = startArray[startArray.length - 1];
-  pattern3.loop = true;
-  pattern3.start();
-  console.log(pattern3);
-})
 }
-else if (v == 3 && states_array.includes(3)) {
-  console.log("stop pattern 4");
-  pattern4.stop(); grain_list[3].stop();
-  const index = states_array.indexOf(v);
-  states_array.splice(index, 1);
-} else if (v == 3) {
-  states_array.push(v);
-  console.log(states_array);
-  generateMelody().then((e)=> {
-  pattern4 = new Tone.Part(((time, note) => {
-    pitchShiftList[3].pitch = note;
-    grain_list[3].start();
-  //  console.log(note);
-  }), zip);
-  pattern4.loopStart = 0;
-  pattern4.loopEnd = startArray[startArray.length - 1];
-  pattern4.loop = true;
-  pattern4.start();
-  console.log(pattern4);
-})
-}
+  else if (v==-1){
+    let curPattern = states_array[states_array.length-1];
+    patternList[pattern].stop();  //patternList[pattern].clear();
+    grain_list[curPattern].stop();
+    states_array.splice(states_array.indexOf(curPattern), 1);
+    console.log("stop " + patternList[pattern]);
+    }
 })
