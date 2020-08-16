@@ -1,5 +1,6 @@
 
 //TO DO: PLAY WITH playbackRate, detune, filters, generally try to make it sound better
+//ADD: ADD 6th COLUMN TO UI FOR VOLUME CONTROL OF SYNTHS
 
 // let clock = new Tone.Clock(function(time){ //auto do something every 30 seconds
 // 	console.log(time);

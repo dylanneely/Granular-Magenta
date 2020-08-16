@@ -12,35 +12,54 @@ h1 {
 [nexus-ui] {
   width:100%;
   height:100%;
-  margin:10px;
+  /* margin:10px; */
 }
+
+#volumes {
+  height: 100%;
+}
+/* #droneVol {
+  height: 10%;
+}
+#synthVol {
+  height: 10%;
+}
+#grainVol {
+  height: 10%;
+} */
+audio { width: 100%; }
 
 
 .columnleft{
     float: left;
-    width: 20%;
+    width: 16%;
     }
 
 .columncenterL {
       float: left;
-      width: 20%;
+      width: 16%;
          }
 .columncenter {
   float: left;
-  width: 20%;
+  width: 16%;
      }
 .columncenterR {
   float: left;
-  width: 20%;
+  width: 16%;
         }
 
 .columnright {
   float: left;
-  width: 20%;
+  width: 18%;
      }
 
-/* .row:after {
+.columnfarright {
+    float: left;
+    width: 18%;
+          }
+
+.row:after {
         content: "";
          display: table;
          clear: both;
-         } */
+         }
