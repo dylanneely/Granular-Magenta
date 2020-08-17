@@ -28,41 +28,27 @@
     <div class="row">
       <div class="columnleft" style="background-color:#FFB695;">
           <div id="grains">
-            Grain Start / Length
-            <div nexus-ui ="position" id ="grain1control"></div>
-            <div nexus-ui ="position" id ="grain2control"></div>
-            <div nexus-ui ="position" id ="grain3control"></div>
-            <div nexus-ui ="position" id ="grain4control"></div>
+            Start & Loop Size
+            <div nexus-ui ="position" id ="graincontrol1" style = "padding: 10px 10px 10px 10px"></div>
+            Playback Rate & Detune
+            <div nexus-ui ="position" id ="graincontrol2" style= "padding: 10px 10px 10px 10px"></div>
+          </div>
+          <div nexus-ui="radiobutton" id ="grainSelect" style="padding-bottom: 15px">
           </div>
       </div>
-      <div class="columncenterL" style="background-color:#96D1CD;">
-
-          <div id="grainsSize">
-            Grain Size / Overlap
-            <div nexus-ui ="position" id ="grain1bcontrol"></div>
-            <div nexus-ui ="position" id ="grain2bcontrol"></div>
-            <div nexus-ui ="position" id ="grain3bcontrol"></div>
-            <div nexus-ui ="position" id ="grain4bcontrol"></div>
-          </div>
+      <div class="columncenterL" style="background-color:#96D1CD; padding-right: 10px">
+        <div id="grains2">
+          Grain Size & Overlap
+          <div nexus-ui ="position" id ="graincontrol3" style = "padding: 10px 10px 10px 10px"></div>
+          Filter Control (to do)
+          <div nexus-ui ="position" id ="graincontrol4" style="padding: 10px 10px 10px 10px"></div>
+        </div>
+        <div nexus-ui="textbutton" id="loopGrain" style="padding: 15px 0px 15px 0px">
+        </div>
       </div>
-      <div class="columncenter" style="background-color:#FFB695;">
-          <div id="grains2">
-            Grain Start / Length 5 - 8
-            <div nexus-ui ="position" id ="grain5control"></div>
-            <div nexus-ui ="position" id ="grain6control"></div>
-            <div nexus-ui ="position" id ="grain7control"></div>
-            <div nexus-ui ="position" id ="grain8control"></div>
-          </div>
+      <div class="columncenter" style="background-color:#96D1CD;">
       </div>
       <div class="columncenterR" style="background-color:#96D1CD;">
-
-          <div id="grainsSize2">
-            Grain Size / Overlap 5 - 8
-            <div nexus-ui ="position" id ="grain5bcontrol"></div>
-            <div nexus-ui ="position" id ="grain6bcontrol"></div>
-            <div nexus-ui ="position" id ="grain7bcontrol"></div>
-            <div nexus-ui ="position" id ="grain8bcontrol"></div>
-          </div>
       </div>
       <div class="columnright" style="background-color:#FFFF00;">
         <div nexus-ui="button" id="start" style="padding-bottom: 50px">
@@ -79,7 +65,7 @@
         </div>
         <div nexus-ui="textbutton" id="recordmic" style = "padding-bottom: 10px">
         </div>
-        <audio controls></audio>
+        <audio controls> style=""</audio>
       </div>
       <div class="columnfarright" style="background-color:#FFB695;">
         <div nexus-ui="slider" id="volumes">

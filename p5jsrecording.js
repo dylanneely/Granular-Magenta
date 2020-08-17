@@ -7,6 +7,7 @@ let startArray = [];
 let zip = [];
 let patternArray = [];
 let start_note = 60;
+let grainSelect = 0;
 
 const audio = document.querySelector('audio');
 const actx  = Tone.context;
@@ -22,6 +23,7 @@ let sVolumeList = ["sVolume1","sVolume2","sVolume3","sVolume4","sVolume5","sVolu
 let states_array = [];
 let patternList = ["pattern1", "pattern2", "pattern3", "pattern4", "pattern5", "pattern6", "pattern7", "pattern8"]
 let synthList = ["synth1", "synth2", "synth3", "synth4", "synth5", "synth6", "synth7", "synth8"]
+
 //
 buffers = new Tone.ToneAudioBuffers({
            urls: buf_list,
@@ -40,7 +42,7 @@ for (volume in gVolumeList) {
       gVolumeList[volume] = new Tone.Volume(-6);
     }
 for (volume in sVolumeList) {
-      sVolumeList[volume] = new Tone.Volume(-6);
+      sVolumeList[volume] = new Tone.Volume(-12);
     }
 
 for (pattern in patternList) {
@@ -48,11 +50,19 @@ for (pattern in patternList) {
     }
 
 for (synth in synthList) {
-     synthList[synth] = new Tone.Synth();
+     synthList[synth] = new Tone.PolySynth(Tone.FMSynth);
+     synthList[synth].set({
+	      envelope: {
+		        attack: 0.08,
+            decay: 0.25,
+            sustain: 0.5,
+            release: 0.5
+	         }
+         })
      synthList[synth].sync();
 }
 
-let randomSeed = randomMIDIpitch(24, 36); //range, offset
+let randomSeed = randomMIDIpitch(36, 48); //range, offset
 let randomInterval1 = randomMIDIpitch(4, 3);
 let randomInterval2 = randomMIDIpitch(4, 3);
 let seedChordMIDI = [randomSeed, randomSeed + randomInterval1, randomSeed + randomInterval1 + randomInterval2]
@@ -60,26 +70,29 @@ let seedChordFreq = [Tone.Frequency(seedChordMIDI[0], "midi"), Tone.Frequency(se
 let rhythmSeed = [randomMIDIpitch(3, 1), randomMIDIpitch(3, 1),randomMIDIpitch(3, 1)]
 console.log(seedChordMIDI, rhythmSeed)
 
-verb = new Tone.Reverb(4);
+verb = new Tone.Reverb(4).toDestination();
 const pingPong = new Tone.PingPongDelay("4n", 0.5);
 
 const filter = new Tone.Filter(1500, "lowpass");
+const synthFilter = new Tone.Filter(5000, "lowpass");
 
-const grainBusVol = new Tone.Volume(0).fan(Tone.Destination, recDest)
-const synthBusVol = new Tone.Volume(0).fan(Tone.Destination, recDest)
+// const grainBusGain = new Tone.Gain(0).toDestination();
+// const synthBusGain = new Tone.Gain(0).toDestination(); not working
+verb.connect(recDest)
+verb.connect(recDest)
+const autoFilter = new Tone.AutoFilter(0.1).start();
 
 for (let i = 0; i < grain_list.length; i++) { //handle grain and synth routing together
-    grain_list[i].chain(pitchShiftList[i], gVolumeList[i], pingPong, filter, verb, grainBusVol);
+    grain_list[i].chain(pitchShiftList[i], gVolumeList[i], pingPong, filter, verb);
     grain_list[i].sync();
-    synthList[i].chain(sVolumeList[i], verb, synthBusVol);
+    synthList[i].chain(sVolumeList[i], synthFilter, verb);
     synthList[i].sync();
   }
 
 let synth_drone = new Tone.PolySynth();
-const autoFilter = new Tone.AutoFilter(0.1).start();
 
 synth_drone.chain(sVolumeList[8], autoFilter, verb);
-sVolumeList[8].volume.value = -12;
+sVolumeList[8].volume.value = -24;
 
 function setup() {
   noCanvas();
@@ -142,14 +155,14 @@ async function generateMelody() {
     totalQuantizedSteps: rhythmSeed.reduce(function(a, b){return a + b;}, 0),
     quantizationInfo: { stepsPerQuarter: 4}
   };
-  let steps = randomMIDIpitch(36, 12);
-  let temperature = 0.75; //we get far afield by reseeding with results
+  let steps = randomMIDIpitch(36, 24);
+  let temperature = 0.9;
 
   let result = await melodyRnn.continueSequence(seed, steps, temperature);
   let combined = core.sequences.concatenate([seed, result]);
   start_note = combined.notes[0].pitch;
   console.log("start note: " +  start_note);
-  patternArray = []; startArray = [] //clear arrays
+  patternArray = []; startArray = []; //clear arrays
   for (let note of combined.notes) {
   patternArray.push(note.pitch); //STRAIGHTFORWARD NOTE GENERATION
   startArray.push(note.quantizedStartStep / 4); //reasonable speed - could do with transport instead
@@ -163,6 +176,8 @@ async function generateMelody() {
   }
   rhythmSeed = [randomMIDIpitch(3, 1), randomMIDIpitch(3, 1),randomMIDIpitch(3, 1)]
   synth_drone.triggerAttack(seedChordFreq);
+  console.log(zip);
+
 }
 
 //UI Elements
@@ -207,6 +222,28 @@ recordButton.on('change',async function(v) {
   }
 })
 
+let grainLoop = new Nexus.TextButton('#loopGrain', {
+    'size': [150,50],
+    'state': false,
+    'text': 'Loop Grains',
+    'alternateText': 'Stop Looping'
+})
+
+let grainLooping = false;
+
+grainLoop.on('change',async function(v) {
+  if (v == true) {
+    await Tone.start();
+    grainLooping = true;
+    grain_list[grainSelect].loop = true;
+    if (grain_list[grainSelect] == "stopped") {grain_list[grainSelect].start();}
+  //  if (grain_list[grainSelect].state == "stopped") {grain_list[grainSelect].start()};
+  } else {
+    for (grain in grain_list) {grain_list[grain].loop = false; grain_list[grain].stop();}
+    grainLooping = false;
+  }
+})
+
 let recordMic = new Nexus.TextButton('#recordmic', {
     'size': [150,50],
     'state': false,
@@ -242,6 +279,12 @@ let radiobutton = new Nexus.RadioButton('#radiobutton',{
   'numberOfButtons': 8,
 })
 
+let grainSelectButton = new Nexus.RadioButton('#grainSelect',{
+  'size': [200,50],
+  'mode': 'impulse',
+  'numberOfButtons': 8,
+})
+
 let dropdown = new Nexus.Select('#dropdown',{
   'size': [150,35],
   'options': Object.values(buf_list)
@@ -252,230 +295,124 @@ dropdown.on('change',async function(v) {
   if (v.index == 8) { // clunky manual override if user loads sound
     if (states_array.length == 0) {
       grain_list[0].buffer = userAudio;
-      grain_list[0].start();
+      grainSelectButton.select(0);
       console.log(grain_list[0])
     }
     else  {
-      let curState = states_array[states_array.length-1]
-      grain_list[curState].buffer = userAudio;
-      grain_list[curState].start();
-      console.log(grain_list[curState])
+      grain_list[grainSelect].buffer = userAudio;
+      grainSelectButton.select(grainSelect);
+      console.log(grain_list[grainSelect])
     }
   }
   else { for (key in buf_list) {
     if (v.index == key)
     {
-      if (states_array.length == 0) {
-        grain_list[0].buffer = buffers.get(key);
-        if (grain_list[0].state != "started") {grain_list[0].start()};
-        console.log(grain_list[0])
-      }
-      else  {
-        let curState = states_array[states_array.length-1]
-        grain_list[curState].buffer = buffers.get(key);
-        if (grain_list[curState].state != "started") {grain_list[curState].start()};
-        console.log(grain_list[curState])
+      grain_list[grainSelect].buffer = buffers.get(key);
+      grainSelectButton.select(grainSelect);
       }
     }
   }
-}
 });
 
+// function callback(time, note) {
+//     console.log("callback");
+//     pitchShiftList[0].pitch = (note - start_note);
+//     synthList[0].triggerAttackRelease(Tone.Frequency(note, "midi"), "4n", time);
+//     grain_list[0].start(time);//offset to avoid occasional error with start time
+// }
 
 radiobutton.on('change', async function(v) {
-  console.log(v);
   if (v > -1) {
   await Tone.start();
-  if (Tone.Transport.state = "stopped" || "paused") {Tone.Transport.start();};
-  for (pattern in patternList)
-  if (v == pattern && states_array.includes(v))
-  {
-    console.log("already playing " + patternList[pattern]);
-    patternList[pattern] = patternList[v];
-  } else if (v == pattern) {
+  if (Tone.Transport.state = "stopped" || "paused") {Tone.Transport.start();}
     console.log(" grain " + v + " started!");
     generateMelody().then((e)=> {
     //  const lfo = new Tone.LFO(3, 0.5, 3).start();
-      patternList[pattern] = new Tone.Part(((time, note) => {
+      patternList[v] = new Tone.Part(((time, note) => {
         pitchShiftList[v].pitch = (note - start_note);
+      //  let overtones = [Tone.Frequency(note, "midi"), Tone.Frequency(note, "midi") * 2, Tone.Frequency(note, "midi") * 3]
         synthList[v].triggerAttackRelease(Tone.Frequency(note, "midi"), "4n", time);
-        grain_list[v].start(time);//offset to avoid occasional error with start time
+        if (grainLooping == false || grainSelect != v) {grain_list[v].start(time);}//
         //lfo.connect(synth.harmonicity);
     }), zip);
-      patternList[pattern].loopStart = 0;
-      patternList[pattern].loopEnd = startArray[startArray.length - 1];
-      patternList[pattern].loop = true;
-      patternList[pattern].start();
-      console.log(patternList[pattern]);
+      // patternList[pattern].value = zip; //attempted to not have to continually create new Tone.Parts within this promise, but ran into issues getting the callback to work
+      // patternList[pattern].callback = callback(startArray, patternArray);
+      patternList[v].loop = true;
+      patternList[v].loopEnd = startArray[startArray.length-1];
+      patternList[v].start(Tone.now());
+      console.log(patternList[v]);
+      patternList[v].stop(Tone.now() + 30);
+      Tone.Transport.schedule((time) => {
+  	  patternList[v].stop(time);
+      patternList[v].dispose();
+      console.log("patttern " + v + " ended!")
+   }, 30);
+      //patternList[pattern].clear(Tone.now() + 30);
       states_array.push(v);
     })
   }
-}
   else if (v==-1){
-    patternList[pattern].stop();  //patternList[pattern].clear();
-    grain_list[pattern].stop();
+    patternList[states_array[states_array.length-1]].stop();  //patternList[pattern].clear();
+    grain_list[states_array[states_array.length-1]].stop();
+    console.log("stop " + patternList[states_array[states_array.length-1]]);
     states_array.pop();
-    console.log("stop " + patternList[pattern]);
     }
 })
 
-
+grainSelectButton.on('change', function(v) {
+  if (grainLooping == true ) {
+    // grain_list[grainSelect].loop = false; allow multiple loops to accumulate
+    // grain_list[grainSelect].stop();
+    grainSelect = v;
+    grain_list[grainSelect].loop = true;
+  } else {grainSelect = v;}
+  if (grain_list[grainSelect].state == "stopped") {grain_list[grainSelect].start()};
+})
 
 let grainsControl = new Nexus.Rack("#grains");
 let grainsControl2 = new Nexus.Rack("#grains2");
 
 //TO DO: CREATE ARRAY FOR GRAIN CONTROLS - FIRST ATTEMT DIDN'T WORK WITH NEXUS, SO CLUNKY RIGHT NOW
-grainsControl.grain1control.colorize("fill","#333")
-grainsControl.grain1control.resize(150,150);
-grainsControl.grain1control.stepX = 0.0001;
-grainsControl.grain1control.stepY = 0.0001;
-grainsControl.grain1control.y = 0.0;
-grainsControl.grain1control.x = 0.0;
 
-grainsControl.grain2control.colorize("fill","#666")
-grainsControl.grain2control.resize(150,150);
-grainsControl.grain2control.stepX = 0.0001;
-grainsControl.grain2control.stepY = 0.0001;
-grainsControl.grain2control.y = 0.0;
-grainsControl.grain2control.x = 0.0;
+//LENGTH AND LOOP SIZE
+grainsControl.graincontrol1.colorize("fill","#333")
+grainsControl.graincontrol1.stepX = 0.0001;
+grainsControl.graincontrol1.stepY = 0.0001;
+grainsControl.graincontrol1.y = 0.0;
+grainsControl.graincontrol1.x = 0.0;
 
-grainsControl.grain3control.colorize("fill","#333")
-grainsControl.grain3control.resize(150,150);
-grainsControl.grain3control.stepX = 0.0001;
-grainsControl.grain3control.stepY = 0.0001;
-grainsControl.grain3control.y = 0.0;
-grainsControl.grain3control.x = 0.0;
+//PLAYBACK RATE AND DETUNE
+grainsControl.graincontrol2.colorize("fill","#666")
+grainsControl.graincontrol2.stepX = 0.01;
+grainsControl.graincontrol2.stepY = 0.01;
+grainsControl.graincontrol2.y = 0; //detune
+grainsControl.graincontrol2.x = 1.0; //playback
+grainsControl.graincontrol2.minY = -100;
+grainsControl.graincontrol2.maxY = 100;
+grainsControl.graincontrol2.minX = 0.1;
+grainsControl.graincontrol2.maxX = 10;
 
-grainsControl.grain4control.colorize("fill","#666")
-grainsControl.grain4control.resize(150,150);
-grainsControl.grain4control.stepX = 0.0001;
-grainsControl.grain4control.stepY = 0.0001;
-grainsControl.grain4control.y = 0.0;
-grainsControl.grain4control.x = 0.0;
+//GRAIN SIZE & OVERLAP
+grainsControl2.graincontrol3.colorize("fill","#333")
+grainsControl2.graincontrol3.x = 0.2;
+grainsControl2.graincontrol3.maxX = 0.4;
+grainsControl2.graincontrol3.stepX = 0.0001;
+grainsControl2.graincontrol3.stepY = 0.0001;
+grainsControl2.graincontrol3.y = 0.1;
+grainsControl2.graincontrol3.minY = 0.0001;
+grainsControl2.graincontrol3.minX = 0.0001;
+grainsControl2.graincontrol3.maxY = 0.8;
 
-grainsControl2.grain5control.colorize("fill","#333")
-grainsControl2.grain5control.resize(150,150);
-grainsControl2.grain5control.stepX = 0.0001;
-grainsControl2.grain5control.stepY = 0.0001;
-grainsControl2.grain5control.y = 0.0;
-grainsControl2.grain5control.x = 0.0;
-
-grainsControl2.grain6control.colorize("fill","#333")
-grainsControl2.grain6control.resize(150,150);
-grainsControl2.grain6control.stepX = 0.0001;
-grainsControl2.grain6control.stepY = 0.0001;
-grainsControl2.grain6control.y = 0.0;
-grainsControl2.grain6control.x = 0.0;
-
-grainsControl2.grain7control.colorize("fill","#333")
-grainsControl2.grain7control.resize(150,150);
-grainsControl2.grain7control.stepX = 0.0001;
-grainsControl2.grain7control.stepY = 0.0001;
-grainsControl2.grain7control.y = 0.0;
-grainsControl2.grain7control.x = 0.0;
-
-grainsControl2.grain8control.colorize("fill","#333")
-grainsControl2.grain8control.resize(150,150);
-grainsControl2.grain8control.stepX = 0.0001;
-grainsControl2.grain8control.stepY = 0.0001;
-grainsControl2.grain8control.y = 0.0;
-grainsControl2.grain8control.x = 0.0;
-
-let grainsControlSize = new Nexus.Rack("#grainsSize");
-let grainsControlSize2 = new Nexus.Rack("#grainsSize2");
-
-grainsControlSize.grain1bcontrol.colorize("fill","#333")
-grainsControlSize.grain1bcontrol.resize(150,150);
-grainsControlSize.grain1bcontrol.x = 0.2;
-grainsControlSize.grain1bcontrol.maxX = 0.4;
-grainsControlSize.grain1bcontrol.stepX = 0.0001;
-grainsControlSize.grain1bcontrol.stepY = 0.0001;
-grainsControlSize.grain1bcontrol.y = 0.1;
-grainsControlSize.grain1bcontrol.minY = 0.0001;
-grainsControlSize.grain1bcontrol.minX = 0.0001;
-grainsControlSize.grain1bcontrol.maxY = 0.4;
-
-grainsControlSize.grain2bcontrol.colorize("fill","#666")
-grainsControlSize.grain2bcontrol.resize(150,150);
-grainsControlSize.grain2bcontrol.x = 0.2;
-grainsControlSize.grain2bcontrol.maxX = 0.4;
-grainsControlSize.grain2bcontrol.stepX = 0.0001;
-grainsControlSize.grain2bcontrol.stepY = 0.0001;
-grainsControlSize.grain2bcontrol.y = 0.1;
-grainsControlSize.grain2bcontrol.minY = 0.0001;
-grainsControlSize.grain2bcontrol.minX = 0.0001;
-grainsControlSize.grain2bcontrol.maxY = 0.4;
-
-grainsControlSize.grain3bcontrol.colorize("fill","#333")
-grainsControlSize.grain3bcontrol.resize(150,150);
-grainsControlSize.grain3bcontrol.x = 0.2;
-grainsControlSize.grain3bcontrol.maxX = 0.4;
-grainsControlSize.grain3bcontrol.stepX = 0.0001;
-grainsControlSize.grain3bcontrol.stepY = 0.0001;
-grainsControlSize.grain3bcontrol.y = 0.1;
-grainsControlSize.grain3bcontrol.minY = 0.0001;
-grainsControlSize.grain3bcontrol.minX = 0.0001;
-grainsControlSize.grain3bcontrol.maxY = 0.4;
-
-grainsControlSize.grain4bcontrol.colorize("fill","#666")
-grainsControlSize.grain4bcontrol.resize(150,150);
-grainsControlSize.grain4bcontrol.x = 0.2;
-grainsControlSize.grain4bcontrol.minX = 0.0001;
-grainsControlSize.grain4bcontrol.maxX = 0.4;
-grainsControlSize.grain4bcontrol.stepX = 0.0001;
-grainsControlSize.grain4bcontrol.stepY = 0.0001;
-grainsControlSize.grain4bcontrol.y = 0.1;
-grainsControlSize.grain4bcontrol.minY = 0.0001;
-grainsControlSize.grain4bcontrol.minX = 0.0001;
-grainsControlSize.grain4bcontrol.maxY = 0.4;
-
-grainsControlSize2.grain5bcontrol.colorize("fill","#333")
-grainsControlSize2.grain5bcontrol.resize(150,150);
-grainsControlSize2.grain5bcontrol.x = 0.2;
-grainsControlSize2.grain5bcontrol.maxX = 0.4;
-grainsControlSize2.grain5bcontrol.stepX = 0.0001;
-grainsControlSize2.grain5bcontrol.stepY = 0.0001;
-grainsControlSize2.grain5bcontrol.y = 0.1;
-grainsControlSize2.grain5bcontrol.minY = 0.0001;
-grainsControlSize2.grain5bcontrol.minX = 0.0001;
-grainsControlSize2.grain5bcontrol.maxY = 0.4;
-
-grainsControlSize2.grain6bcontrol.colorize("fill","#333")
-grainsControlSize2.grain6bcontrol.resize(150,150);
-grainsControlSize2.grain6bcontrol.x = 0.2;
-grainsControlSize2.grain6bcontrol.maxX = 0.4;
-grainsControlSize2.grain6bcontrol.stepX = 0.0001;
-grainsControlSize2.grain6bcontrol.stepY = 0.0001;
-grainsControlSize2.grain6bcontrol.y = 0.1;
-grainsControlSize2.grain6bcontrol.minY = 0.0001;
-grainsControlSize2.grain6bcontrol.minX = 0.0001;
-grainsControlSize2.grain6bcontrol.maxY = 0.4;
-
-grainsControlSize2.grain7bcontrol.colorize("fill","#333")
-grainsControlSize2.grain7bcontrol.resize(150,150);
-grainsControlSize2.grain7bcontrol.x = 0.2;
-grainsControlSize2.grain7bcontrol.maxX = 0.4;
-grainsControlSize2.grain7bcontrol.stepX = 0.0001;
-grainsControlSize2.grain7bcontrol.stepY = 0.0001;
-grainsControlSize2.grain7bcontrol.y = 0.1;
-grainsControlSize2.grain7bcontrol.minY = 0.0001;
-grainsControlSize2.grain7bcontrol.minX = 0.0001;
-grainsControlSize2.grain7bcontrol.maxY = 0.4;
-
-grainsControlSize2.grain8bcontrol.colorize("fill","#333")
-grainsControlSize2.grain8bcontrol.resize(150,150);
-grainsControlSize2.grain8bcontrol.x = 0.2;
-grainsControlSize2.grain8bcontrol.maxX = 0.4;
-grainsControlSize2.grain8bcontrol.stepX = 0.0001;
-grainsControlSize2.grain8bcontrol.stepY = 0.0001;
-grainsControlSize2.grain8bcontrol.y = 0.1;
-grainsControlSize2.grain8bcontrol.minY = 0.0001;
-grainsControlSize2.grain8bcontrol.minX = 0.0001;
-grainsControlSize2.grain8bcontrol.maxY = 0.4;
+//FILTER CONTROL
+grainsControl2.graincontrol4.colorize("fill","#333")
+grainsControl2.graincontrol4.stepX = 0.0001;
+grainsControl2.graincontrol4.stepY = 0.0001;
+grainsControl2.graincontrol4.y = 0.0;
+grainsControl2.graincontrol4.x = 0.0;
 
 let volumes = new Nexus.Rack("#volumes");
 //for (volume in volumeList) { //AUTOMATIC ASSIGNMENT DOESN'T WORK WITH NEXUSUI
-let minVol = -100; let maxVol = 12; let defVol = -6;
+let minVol = -100; let maxVol = 12; let defVol = -6; let sDefVol = -12;
 
 volumes.gVolume1.resize(150, 25);
 volumes.gVolume1.min = minVol;
@@ -521,46 +458,46 @@ volumes.gVolume8.value = defVol;
 volumes.sVolume1.resize(150, 25);
 volumes.sVolume1.min = minVol;
 volumes.sVolume1.max = maxVol;
-volumes.sVolume1.value = defVol;
+volumes.sVolume1.value = sDefVol;
 
 volumes.sVolume2.resize(150, 25);
 volumes.sVolume2.min = minVol;
 volumes.sVolume2.max = maxVol;
-volumes.sVolume2.value = defVol;
+volumes.sVolume2.value = sDefVol;
 
 volumes.sVolume3.resize(150, 25);
 volumes.sVolume3.min = minVol;
 volumes.sVolume3.max = maxVol;
-volumes.sVolume3.value = defVol;
+volumes.sVolume3.value = sDefVol;
 
 volumes.sVolume4.resize(150, 25);
 volumes.sVolume4.min = minVol;
 volumes.sVolume4.max = maxVol;
-volumes.sVolume4.value = defVol;
+volumes.sVolume4.value = sDefVol;
 
 volumes.sVolume5.resize(150, 25);
 volumes.sVolume5.min = minVol;
 volumes.sVolume5.max = maxVol;
-volumes.sVolume5.value = defVol;
+volumes.sVolume5.value = sDefVol;
 
 volumes.sVolume6.resize(150, 25);
 volumes.sVolume6.min = minVol;
 volumes.sVolume6.max = maxVol;
-volumes.sVolume6.value = defVol;
+volumes.sVolume6.value = sDefVol;
 
 volumes.sVolume7.resize(150, 25);
 volumes.sVolume7.min =  minVol;
 volumes.sVolume7.max = maxVol;
-volumes.sVolume7.value = defVol;
+volumes.sVolume7.value = sDefVol;
 
 volumes.sVolume8.resize(150, 25);
 volumes.sVolume8.min = minVol;
 volumes.sVolume8.max = maxVol;
-volumes.sVolume8.value = defVol;
+volumes.sVolume8.value = sDefVol;
 
 volumes.droneVol.min = minVol;
 volumes.droneVol.max = maxVol;
-volumes.droneVol.value = -12;
+volumes.droneVol.value = -24;
 
 volumes.grainVol.min = minVol;
 volumes.grainVol.max = maxVol;
@@ -570,39 +507,14 @@ volumes.synthVol.min = minVol;
 volumes.synthVol.max = maxVol;
 volumes.synthVol.value = 0;
 
-grainsControl.grain1control.on('change', function(v) //AS ABOVE - MANUALLY SETTING FOR EACH BECAUSE OF NEXUS ASSIGNMENT ISSUE
-        {let startend = loopsize(v.x, v.y, 0); grain_list[0].loopStart = startend[0]; grain_list[0].loopEnd = startend[1];});
-grainsControl.grain2control.on('change', function(v)
-        {let startend = loopsize(v.x, v.y, 1); grain_list[1].loopStart = startend[0]; grain_list[1].loopEnd = startend[1];});
-grainsControl.grain3control.on('change', function(v)
-        {let startend = loopsize(v.x, v.y, 2); grain_list[2].loopStart = startend[0]; grain_list[2].loopEnd = startend[1];});
-grainsControl.grain4control.on('change', function(v)
-        {let startend = loopsize(v.x, v.y, 3); grain_list[3].loopStart = startend[0]; grain_list[3].loopEnd = startend[1];});
-grainsControl2.grain5control.on('change', function(v) //AS ABOVE - MANUALLY SETTING FOR EACH BECAUSE OF NEXUS ASSIGNMENT ISSUE
-       {let startend = loopsize(v.x, v.y, 4); grain_list[4].loopStart = startend[0]; grain_list[4].loopEnd = startend[1];});
-grainsControl2.grain6control.on('change', function(v)
-       {let startend = loopsize(v.x, v.y, 5); grain_list[5].loopStart = startend[0]; grain_list[5].loopEnd = startend[1];});
-grainsControl2.grain7control.on('change', function(v)
-       {let startend = loopsize(v.x, v.y, 6); grain_list[6].loopStart = startend[0]; grain_list[6].loopEnd = startend[1];});
-grainsControl2.grain8control.on('change', function(v)
-       {let startend = loopsize(v.x, v.y, 7); grain_list[7].loopStart = startend[0]; grain_list[7].loopEnd = startend[1];});
-
-grainsControlSize.grain1bcontrol.on('change', function(v)
-        {	grain_list[0].grainSize = v.x; grain_list[0].overlap = v.y;});
-grainsControlSize.grain2bcontrol.on('change', function(v)
-        {	grain_list[1].grainSize = v.x; grain_list[1].overlap = v.y;});
-grainsControlSize.grain3bcontrol.on('change', function(v)
-        {	grain_list[2].grainSize = v.x; grain_list[2].overlap = v.y;});
-grainsControlSize.grain4bcontrol.on('change', function(v)
-        {	grain_list[3].grainSize = v.x; grain_list[3].overlap = v.y;});
-grainsControlSize2.grain5bcontrol.on('change', function(v)
-        {	grain_list[4].grainSize = v.x; grain_list[4].overlap = v.y;});
-grainsControlSize2.grain6bcontrol.on('change', function(v)
-        {	grain_list[5].grainSize = v.x; grain_list[5].overlap = v.y;});
-grainsControlSize2.grain7bcontrol.on('change', function(v)
-        {	grain_list[6].grainSize = v.x; grain_list[6].overlap = v.y;});
-grainsControlSize2.grain8bcontrol.on('change', function(v)
-        {	grain_list[7].grainSize = v.x; grain_list[7].overlap = v.y;});
+grainsControl.graincontrol1.on('change', function(v) //AS ABOVE - MANUALLY SETTING FOR EACH BECAUSE OF NEXUS ASSIGNMENT ISSUE
+        {let startend = loopsize(v.x, v.y, 0); grain_list[grainSelect].loopStart = startend[0]; grain_list[0].loopEnd = startend[1];});
+grainsControl.graincontrol2.on('change', function(v)
+        {grain_list[grainSelect].playbackRate = v.x; grain_list[grainSelect].detune = v.y;});
+grainsControl2.graincontrol3.on('change', function(v)
+        {	grain_list[grainSelect].grainSize = v.x; grain_list[grainSelect].overlap = v.y;});
+grainsControl2.graincontrol4.on('change', function(v) //to add filter control
+        {grain_list[grainSelect].playbackRate = v.x; grain_list[grainSelect].detune = v.y;});
 
 // for (let index = 0; index < volumeList.length; index++) { NOT WORKING WITH ASSIGNMENT TO NEXUSUI
 
@@ -626,5 +538,11 @@ volumes.sVolume7.on('change', function(v) {sVolumeList[6].volume.rampTo(v,.1)});
 volumes.sVolume8.on('change', function(v) {sVolumeList[7].volume.rampTo(v,.1)});
 
 volumes.droneVol.on('change', function(v) {sVolumeList[8].volume.rampTo(v,.1)});
-volumes.synthVol.on('change', function(v) {synthBusVol.volume.rampTo(v,.1)});
-volumes.grainVol.on('change', function(v) {grainBusVol.volume.rampTo(v,.1)});
+volumes.synthVol.on('change', function(v) { //bleed was coming through synthBusVol bus, so just creating a control link to individual volumes - not ideal
+  for (volume in sVolumeList) {
+      sVolumeList[volume].volume.rampTo(v,.1)}
+    });
+volumes.grainVol.on('change', function(v) {
+  for (volume in gVolumeList) {
+    gVolumeList[volume].volume.rampTo(v,.1)}
+    });

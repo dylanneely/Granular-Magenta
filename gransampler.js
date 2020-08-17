@@ -1,6 +1,8 @@
 
 //TO DO: PLAY WITH playbackRate, detune, filters, generally try to make it sound better
-//ADD: ADD 6th COLUMN TO UI FOR VOLUME CONTROL OF SYNTHS
+//Add visual confirmation - meters for parts, waveform for buffer
+//Create autoplay to generate new melodies every 30 seconds & vary grains without user input
+//VARY SYNTHESIZER OPTIONS - MetalSynth, PluckSynth
 
 // let clock = new Tone.Clock(function(time){ //auto do something every 30 seconds
 // 	console.log(time);

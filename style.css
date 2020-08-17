@@ -32,30 +32,30 @@ audio { width: 100%; }
 
 .columnleft{
     float: left;
-    width: 16%;
+    width: 25%;
     }
 
 .columncenterL {
       float: left;
-      width: 16%;
+      width: 25%;
          }
 .columncenter {
   float: left;
-  width: 16%;
+  width: 5%;
      }
 .columncenterR {
   float: left;
-  width: 16%;
+  width: 5%;
         }
 
 .columnright {
   float: left;
-  width: 18%;
+  width: 20%;
      }
 
 .columnfarright {
     float: left;
-    width: 18%;
+    width: 20%;
           }
 
 .row:after {
