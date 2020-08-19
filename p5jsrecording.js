@@ -14,6 +14,8 @@ const actx  = Tone.context;
 const recDest  = actx.createMediaStreamDestination();
 const recorder = new MediaRecorder(recDest.stream);
 
+Nexus.context = actx._context;
+
 const baseURL = "https://storage.googleapis.com/audioassets/";
 let buf_list = {0: "Vessel1.wav", 1: "Bowl1.wav", 2: "Bowl2.wav", 3: "BattabangBell.wav", 4: "DianBell.wav", 5: "Frogs.wav", 6: "SolarSounder1.wav", 7: "WindWaves.wav"};
 let grain_list = ["grain1", "grain2", "grain3", "grain4", "grain5", "grain6", "grain7", "grain8"];
@@ -23,6 +25,8 @@ let sVolumeList = ["sVolume1","sVolume2","sVolume3","sVolume4","sVolume5","sVolu
 let states_array = [];
 let patternList = ["pattern1", "pattern2", "pattern3", "pattern4", "pattern5", "pattern6", "pattern7", "pattern8"]
 let synthList = ["synth1", "synth2", "synth3", "synth4", "synth5", "synth6", "synth7", "synth8"]
+let chorusList = ["chorus1", "chorus2", "chorus3", "chorus4", "chorus5", "chorus6", "chorus7", "chorus8"]
+let filterList = ["filter1", "filter2", "filter3", "filter4", "filter5", "filter6", "filter7", "filter8"]
 
 //
 buffers = new Tone.ToneAudioBuffers({
@@ -42,71 +46,140 @@ for (volume in gVolumeList) {
       gVolumeList[volume] = new Tone.Volume(-6);
     }
 for (volume in sVolumeList) {
-      sVolumeList[volume] = new Tone.Volume(-12);
+      sVolumeList[volume] = new Tone.Volume(-18);
     }
 
 for (pattern in patternList) {
       patternList[pattern] = new Tone.Part();
     }
 
+for (chorus in chorusList) {
+      chorusList[chorus] = new Tone.Chorus ( Math.random() * 3, Math.random() * 5 , Math.random() ) //randomized rate, delay time & depth
+    }
+
+for (filt in filterList) {
+      let cutoff = Math.random() * 3000 + 500;
+      filterList[filt] = new Tone.AutoFilter(Math.random(), cutoff, 2);
+    }
+
+
+  //  synthList[synth] = new Tone.PolySynth(Tone.FMSynth);
+
+//some variety of synths
+synthList[0] = new Tone.DuoSynth();
+synthList[1] = new Tone.FMSynth();
+synthList[2] = new Tone.AMSynth();
+synthList[3] = new Tone.Synth();
+//synthList[3] = new Tone.PluckSynth(); //causes an error message re: audioworklet on load
+synthList[4] = new Tone.DuoSynth();
+synthList[5] = new Tone.FMSynth();
+synthList[6] = new Tone.AMSynth();
+synthList[7] = new Tone.MetalSynth();
+
 for (synth in synthList) {
-     synthList[synth] = new Tone.PolySynth(Tone.FMSynth);
      synthList[synth].set({
 	      envelope: {
-		        attack: 0.08,
-            decay: 0.25,
-            sustain: 0.5,
-            release: 0.5
+		        attack: Math.random() * 0.2,
+            decay: Math.random() * 0.25,
+            sustain: Math.random() * 0.7 + 0.3,
+            release: Math.random() * 0.5,
 	         }
          })
      synthList[synth].sync();
 }
+
+
 
 let randomSeed = randomMIDIpitch(36, 48); //range, offset
 let randomInterval1 = randomMIDIpitch(4, 3);
 let randomInterval2 = randomMIDIpitch(4, 3);
 let seedChordMIDI = [randomSeed, randomSeed + randomInterval1, randomSeed + randomInterval1 + randomInterval2]
 let seedChordFreq = [Tone.Frequency(seedChordMIDI[0], "midi"), Tone.Frequency(seedChordMIDI[1], "midi"), Tone.Frequency(seedChordMIDI[2], "midi")];
-let rhythmSeed = [randomMIDIpitch(3, 1), randomMIDIpitch(3, 1),randomMIDIpitch(3, 1)]
+let rhythmSeed = [randomMIDIpitch(2, 1), randomMIDIpitch(3, 1),randomMIDIpitch(2, 1)]
 console.log(seedChordMIDI, rhythmSeed)
 
 verb = new Tone.Reverb(4).toDestination();
 const pingPong = new Tone.PingPongDelay("4n", 0.5);
 
 const filter = new Tone.Filter(1500, "lowpass");
-const synthFilter = new Tone.Filter(5000, "lowpass");
 
 // const grainBusGain = new Tone.Gain(0).toDestination();
 // const synthBusGain = new Tone.Gain(0).toDestination(); not working
 verb.connect(recDest)
-verb.connect(recDest)
 const autoFilter = new Tone.AutoFilter(0.1).start();
 
 for (let i = 0; i < grain_list.length; i++) { //handle grain and synth routing together
-    grain_list[i].chain(pitchShiftList[i], gVolumeList[i], pingPong, filter, verb);
+    //grain_list[i].chain(pitchShiftList[i], gVolumeList[i], pingPong, filter, verb);
+    grain_list[i].chain(pitchShiftList[i], gVolumeList[i], filter, verb);
     grain_list[i].sync();
-    synthList[i].chain(sVolumeList[i], synthFilter, verb);
+    synthList[i].chain(sVolumeList[i], chorusList[i], filterList[i], verb);
     synthList[i].sync();
   }
 
 let synth_drone = new Tone.PolySynth();
 
 synth_drone.chain(sVolumeList[8], autoFilter, verb);
-sVolumeList[8].volume.value = -24;
+sVolumeList[8].volume.value = -48;
 
 function setup() {
-  noCanvas();
-  // let cnv = createCanvas(100, 100);
-  // background(220);
+//noCanvas();
+  let cnv = createCanvas(200, 200);
+  background(220);
   // textAlign(CENTER, CENTER);
-
+  cnv.parent('sketch-holder');
 }
 
+const cnvHeight = 200;
+const cnvWidth = 200;
+
+function drawBuffer() {
+  clear();
+  background(220);
+  const buffer = grain_list[grainSelect].buffer.getChannelData();
+  const bandSize = cnvHeight / buffer.length;
+  const step = 16;
+//  console.log(buffer.length)
+  stroke('black');
+
+  beginShape();
+  for (let i = 0; i < buffer.length; i += 4) { // a bit less detail
+    curveVertex(bandSize * i, map(buffer[i], -1, 1, cnvHeight, 0));
+  }
+  endShape();
+}
+
+function drawLoop() {
+  clear();
+  background(220);
+  drawBuffer();
+  loopStart = (grain_list[grainSelect].loopStart / grain_list[grainSelect].buffer.duration) * cnvWidth;
+  loopEnd = (grain_list[grainSelect].loopEnd / grain_list[grainSelect].buffer.duration) * cnvWidth;
+  // console.log(loopStart + " " + loopEnd);
+  stroke('rgba(34,139,34,0.8)');
+  fill('rgba(34,139,34,0.25)');
+  beginShape();
+  vertex(loopStart, cnvHeight);
+  vertex(loopStart, 0);
+  vertex(loopEnd, 0);
+  vertex(loopEnd, cnvHeight);
+  endShape();
+}
+
+function draw() {
+  if (newBuf == false) {}
+  else {
+    drawLoop();
+    newBuf = false;
+  }
+}
+
+
 //HELPER FUNCTIONS
-function loopsize(x, y, num) {
-  slicedur = buffers.get(num).duration;
-	let start = slicedur  * x;
+function loopsize(x, y) {
+  slicedur = grain_list[grainSelect].buffer.duration;
+	let start = slicedur * x;
 	let end = (start + (slicedur * (1-y)+0.001)) % slicedur;
+  console.log(start, end);
   return [start, end];
 }
 
@@ -115,6 +188,8 @@ function randomMIDIpitch(range, offset) { //random MIDI in acceptable range
   return randompitch;
 }
 
+let newBuf = false;
+
 function record() {
   const chunks = [];
   recorder.start();
@@ -122,8 +197,24 @@ function record() {
   recorder.onstop = evt => {
   let blob = new Blob(chunks, { type: 'audio/ogg; codecs=opus' });
   audio.src = URL.createObjectURL(blob);
+  //let blobURL = URL.createObjectURL(blob);
+  console.log(audio.src);
+  recordToBuf(audio.src);
+  }
 }
-}
+
+function recordToBuf (blob) {
+  // var reader = new FileReader();
+  // var result = await reader.readAsDataURL(blob);
+    console.log(blob)// + " " + reader.readAsDataURL(blob));
+    buf_list[8] = "User Sound"; //should grab file name, and separate from live input
+    dropdown.defineOptions(Object.values(buf_list));
+    userAudio = new Tone.ToneAudioBuffer(blob); //works with both recorded output and input
+    console.log(userAudio);
+    dropdown.selectedIndex = 8;
+
+  }
+
 //LOADS SOUND
 load.onchange = function() {
   var sound = document.getElementById("sound");
@@ -153,7 +244,7 @@ async function generateMelody() {
       {pitch: seedChordMIDI[2], quantizedStartStep: rhythmSeed[1], quantizedEndStep: rhythmSeed[2]},
     ],
     totalQuantizedSteps: rhythmSeed.reduce(function(a, b){return a + b;}, 0),
-    quantizationInfo: { stepsPerQuarter: 4}
+    quantizationInfo: { stepsPerQuarter: 4}, //speeds up, adds a bit of funkiness
   };
   let steps = randomMIDIpitch(36, 24);
   let temperature = 0.9;
@@ -165,7 +256,7 @@ async function generateMelody() {
   patternArray = []; startArray = []; //clear arrays
   for (let note of combined.notes) {
   patternArray.push(note.pitch); //STRAIGHTFORWARD NOTE GENERATION
-  startArray.push(note.quantizedStartStep / 4); //reasonable speed - could do with transport instead
+  startArray.push(note.quantizedStartStep / 6); //reasonable speed - could do with transport instead
   }
   zip = startArray.map(function(e,i){return [e,patternArray[i]];}); //no zip function in js!
   //SET NEW SEED
@@ -174,10 +265,9 @@ async function generateMelody() {
   for (let i = 0; i < 3; i++) {
     seedChordFreq[i] = Tone.Frequency(seedChordMIDI[i], "midi");
   }
-  rhythmSeed = [randomMIDIpitch(3, 1), randomMIDIpitch(3, 1),randomMIDIpitch(3, 1)]
+  rhythmSeed = [randomMIDIpitch(2, 1), randomMIDIpitch(3, 1),randomMIDIpitch(2, 1)]
   synth_drone.triggerAttack(seedChordFreq);
   console.log(zip);
-
 }
 
 //UI Elements
@@ -191,13 +281,19 @@ let startButton = new Nexus.Button('#start',{
 startButton.on('change',async function(v) {
   if (v == true) {
   await Tone.start();
-  console.log(v);
   Tone.Transport.start();
+  drawBuffer();
+  console.log(Tone.Transport.bpm.value)
+
   synth_drone.triggerAttack(seedChordFreq, 0);
+  //could use TextButton from NexusUI instead and alter shape of it potentially
+  if (document.getElementById("startText").innerHTML == "Stop") {
+    document.getElementById("startText").innerHTML == "Start";
+  }
 }
 else {
   Tone.Transport.stop();
-  console.log("stopped");
+  document.getElementById("startText").innerHTML = "Stop";
   synth_drone.triggerRelease(seedChordFreq);
   for (grain in grain_list) {
     if (grain_list[grain].state == "started") {	grain_list[grain].stop(); grain_list[grain].state = "stopped";}
@@ -216,23 +312,25 @@ let recordButton = new Nexus.TextButton('#record', {
 recordButton.on('change',async function(v) {
   if (v == true) {
     await Tone.start();
+    "Record Started"
     record();
   } else {
     recorder.stop();
+    "Record Stopped"
   }
 })
 
 let grainLoop = new Nexus.TextButton('#loopGrain', {
     'size': [150,50],
     'state': false,
-    'text': 'Loop Grains',
-    'alternateText': 'Stop Looping'
+    'text': 'Stop Looping Grains',
+    'alternateText': 'Start Looping Grains'
 })
 
-let grainLooping = false;
+let grainLooping = true;
 
 grainLoop.on('change',async function(v) {
-  if (v == true) {
+  if (v == false) {
     await Tone.start();
     grainLooping = true;
     grain_list[grainSelect].loop = true;
@@ -251,29 +349,33 @@ let recordMic = new Nexus.TextButton('#recordmic', {
     'alternateText': 'Stop Recording'
 })
 
-recordMic.on('change',async function(v) {
-  if (v == true) {
-    await Tone.start();
+const meter = new Tone.Meter();
+const mic = new Tone.UserMedia().connect(meter);
+mic.connect(recDest);
 
-    const meter = new Tone.Meter();
-    const mic = new Tone.UserMedia().connect(meter);
+recordMic.on('change', async function(v) {
+  await Tone.start();
+  if (v == true) {
     mic.open().then(() => {
     	// promise resolves when input is available
-    console.log("mic open");
+    console.log("start recording mic");
+    record();
     	// print the incoming mic levels in decibels
-    setInterval(() => console.log(meter.getValue()), 100);
+    //setInterval(() => console.log(meter.getValue()), 100);
     }).catch(e => {
     	// promise is rejected when the user doesn't have or allow mic access
     alert("mic not available - please try accessing from https connection");
     });
-    record();
   } else {
     recorder.stop();
+    console.log("stop recording mic")
+    mic.close();
   }
 })
 
+//GET blob:https://www.gebrauchsmusik.com/ed782395-f93e-45c1-a76d-21dba9c8967d net::ERR_REQUEST_RANGE_NOT_SATISFIABLE
 
-let radiobutton = new Nexus.RadioButton('#radiobutton',{
+let generateParts = new Nexus.RadioButton('#generateParts',{
   'size': [200,50],
   'mode': 'impulse',
   'numberOfButtons': 8,
@@ -293,35 +395,23 @@ let dropdown = new Nexus.Select('#dropdown',{
 dropdown.on('change',async function(v) {
   await Tone.start();
   if (v.index == 8) { // clunky manual override if user loads sound
-    if (states_array.length == 0) {
-      grain_list[0].buffer = userAudio;
-      grainSelectButton.select(0);
-      console.log(grain_list[0])
-    }
-    else  {
       grain_list[grainSelect].buffer = userAudio;
       grainSelectButton.select(grainSelect);
       console.log(grain_list[grainSelect])
+      newBuf = true; //doesn't draw correctly after record
     }
-  }
   else { for (key in buf_list) {
     if (v.index == key)
     {
       grain_list[grainSelect].buffer = buffers.get(key);
       grainSelectButton.select(grainSelect);
+      newBuf = true; //doesn't draw correctly after record
       }
     }
   }
 });
 
-// function callback(time, note) {
-//     console.log("callback");
-//     pitchShiftList[0].pitch = (note - start_note);
-//     synthList[0].triggerAttackRelease(Tone.Frequency(note, "midi"), "4n", time);
-//     grain_list[0].start(time);//offset to avoid occasional error with start time
-// }
-
-radiobutton.on('change', async function(v) {
+generateParts.on('change', async function(v) {
   if (v > -1) {
   await Tone.start();
   if (Tone.Transport.state = "stopped" || "paused") {Tone.Transport.start();}
@@ -331,20 +421,17 @@ radiobutton.on('change', async function(v) {
       patternList[v] = new Tone.Part(((time, note) => {
         pitchShiftList[v].pitch = (note - start_note);
       //  let overtones = [Tone.Frequency(note, "midi"), Tone.Frequency(note, "midi") * 2, Tone.Frequency(note, "midi") * 3]
-        synthList[v].triggerAttackRelease(Tone.Frequency(note, "midi"), "4n", time);
-        if (grainLooping == false || grainSelect != v) {grain_list[v].start(time);}//
+        synthList[v].triggerAttackRelease(Tone.Frequency(note, "midi"), "1n", time);
+        if (grain_list[v].state != "started") {grain_list[v].start(time);}//
         //lfo.connect(synth.harmonicity);
     }), zip);
-      // patternList[pattern].value = zip; //attempted to not have to continually create new Tone.Parts within this promise, but ran into issues getting the callback to work
-      // patternList[pattern].callback = callback(startArray, patternArray);
       patternList[v].loop = true;
       patternList[v].loopEnd = startArray[startArray.length-1];
       patternList[v].start(Tone.now());
-      console.log(patternList[v]);
-      patternList[v].stop(Tone.now() + 30);
       Tone.Transport.schedule((time) => {
   	  patternList[v].stop(time);
       patternList[v].dispose();
+      synthList[v].triggerRelease();
       console.log("patttern " + v + " ended!")
    }, 30);
       //patternList[pattern].clear(Tone.now() + 30);
@@ -360,13 +447,19 @@ radiobutton.on('change', async function(v) {
 })
 
 grainSelectButton.on('change', function(v) {
-  if (grainLooping == true ) {
+  if (v > -1) {
+   //would prefer an always on reaction like bang in max/msp
+  if (grainLooping == true) {
     // grain_list[grainSelect].loop = false; allow multiple loops to accumulate
-    // grain_list[grainSelect].stop();
     grainSelect = v;
+    //console.log(grain_list[grainSelect]);
     grain_list[grainSelect].loop = true;
-  } else {grainSelect = v;}
+  } else {grainSelect = v}
+  newBuf = true;
   if (grain_list[grainSelect].state == "stopped") {grain_list[grainSelect].start()};
+} else {
+  {grain_list[grainSelect].loop = false;}
+}
 })
 
 let grainsControl = new Nexus.Rack("#grains");
@@ -410,9 +503,11 @@ grainsControl2.graincontrol4.stepY = 0.0001;
 grainsControl2.graincontrol4.y = 0.0;
 grainsControl2.graincontrol4.x = 0.0;
 
+
+
 let volumes = new Nexus.Rack("#volumes");
 //for (volume in volumeList) { //AUTOMATIC ASSIGNMENT DOESN'T WORK WITH NEXUSUI
-let minVol = -100; let maxVol = 12; let defVol = -6; let sDefVol = -12;
+let minVol = -100; let maxVol = 24; let defVol = -6; let sDefVol = -18; let sMaxVol = 12;
 
 volumes.gVolume1.resize(150, 25);
 volumes.gVolume1.min = minVol;
@@ -457,58 +552,88 @@ volumes.gVolume8.value = defVol;
 //synth sliders
 volumes.sVolume1.resize(150, 25);
 volumes.sVolume1.min = minVol;
-volumes.sVolume1.max = maxVol;
+volumes.sVolume1.max = sMaxVol;
 volumes.sVolume1.value = sDefVol;
 
 volumes.sVolume2.resize(150, 25);
 volumes.sVolume2.min = minVol;
-volumes.sVolume2.max = maxVol;
+volumes.sVolume2.max = sMaxVol;
 volumes.sVolume2.value = sDefVol;
 
 volumes.sVolume3.resize(150, 25);
 volumes.sVolume3.min = minVol;
-volumes.sVolume3.max = maxVol;
+volumes.sVolume3.max = sMaxVol;
 volumes.sVolume3.value = sDefVol;
 
 volumes.sVolume4.resize(150, 25);
 volumes.sVolume4.min = minVol;
-volumes.sVolume4.max = maxVol;
+volumes.sVolume4.max = sMaxVol;
 volumes.sVolume4.value = sDefVol;
 
 volumes.sVolume5.resize(150, 25);
 volumes.sVolume5.min = minVol;
-volumes.sVolume5.max = maxVol;
+volumes.sVolume5.max = sMaxVol;
 volumes.sVolume5.value = sDefVol;
 
 volumes.sVolume6.resize(150, 25);
 volumes.sVolume6.min = minVol;
-volumes.sVolume6.max = maxVol;
+volumes.sVolume6.max = sMaxVol;
 volumes.sVolume6.value = sDefVol;
 
 volumes.sVolume7.resize(150, 25);
 volumes.sVolume7.min =  minVol;
-volumes.sVolume7.max = maxVol;
+volumes.sVolume7.max = sMaxVol;
 volumes.sVolume7.value = sDefVol;
 
 volumes.sVolume8.resize(150, 25);
 volumes.sVolume8.min = minVol;
-volumes.sVolume8.max = maxVol;
+volumes.sVolume8.max = sMaxVol;
 volumes.sVolume8.value = sDefVol;
 
 volumes.droneVol.min = minVol;
-volumes.droneVol.max = maxVol;
-volumes.droneVol.value = -24;
+volumes.droneVol.max = sMaxVol;
+volumes.droneVol.value = -48;
 
 volumes.grainVol.min = minVol;
 volumes.grainVol.max = maxVol;
-volumes.grainVol.value = 0;
+volumes.grainVol.value = defVol;
 
 volumes.synthVol.min = minVol;
 volumes.synthVol.max = maxVol;
-volumes.synthVol.value = 0;
+volumes.synthVol.value = sDefVol;
+
+let bpm = new Nexus.Slider("#bpm", {
+  "min": 40,
+  "max": 200,
+  "value": 120
+});
+
+bpm.on('change', function(v){console.log(v); Tone.Transport.bpm.value = v;});
+
+let gMeter1 = new Nexus.Meter("#gMeter1", {size: [15, 100]});
+let gMeter2 = new Nexus.Meter("#gMeter2", {size: [15, 100]});
+let gMeter3 = new Nexus.Meter("#gMeter3", {size: [15, 100]});
+let gMeter4 = new Nexus.Meter("#gMeter4", {size: [15, 100]});
+let gMeter5 = new Nexus.Meter("#gMeter5", {size: [15, 100]});
+let gMeter6 = new Nexus.Meter("#gMeter6", {size: [15, 100]});
+let gMeter7 = new Nexus.Meter("#gMeter7", {size: [15, 100]});
+let gMeter8 = new Nexus.Meter("#gMeter8", {size: [15, 100]});
+
+gMeter1.connect(gVolumeList[0], 1); // for metering
+gMeter2.connect(gVolumeList[1], 1);
+gMeter3.connect(gVolumeList[2], 1);
+gMeter4.connect(gVolumeList[3], 1);
+gMeter5.connect(gVolumeList[4], 1);
+gMeter6.connect(gVolumeList[5], 1);
+gMeter7.connect(gVolumeList[6], 1);
+gMeter8.connect(gVolumeList[7], 1);
+
 
 grainsControl.graincontrol1.on('change', function(v) //AS ABOVE - MANUALLY SETTING FOR EACH BECAUSE OF NEXUS ASSIGNMENT ISSUE
-        {let startend = loopsize(v.x, v.y, 0); grain_list[grainSelect].loopStart = startend[0]; grain_list[0].loopEnd = startend[1];});
+        {let startend = loopsize(v.x, v.y); grain_list[grainSelect].loopStart = startend[0]; grain_list[grainSelect].loopEnd = startend[1];
+         if (startend[0] > startend[1]) {grain_list[grainSelect].reverse = true;} else {grain_list[grainSelect].reverse = false;}
+       drawLoop();
+     });
 grainsControl.graincontrol2.on('change', function(v)
         {grain_list[grainSelect].playbackRate = v.x; grain_list[grainSelect].detune = v.y;});
 grainsControl2.graincontrol3.on('change', function(v)
