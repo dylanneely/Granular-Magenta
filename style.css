@@ -40,20 +40,12 @@ p3 {
   padding-left: 40px;
 }
 
-#bpmSlider {
-  margin: auto;
-  padding-left: 40px;
-  text-align: center;
-}
-
-#bpm {
-  margin: auto;
-  padding: 5px 0px 10px 0px;
-}
-
 #generateParts {
-  margin: auto
+  margin: auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
+
 
 #dropdown {
   padding: 15px 0px 15px 0px;
@@ -109,13 +101,17 @@ p3 {
 
 }
 
-.grainMeters {
+/* .grid {
+  display: grid;
+  grid-row-gap: 50px;
+  } */
+
+.meters {
   display: grid;
   grid-auto-flow: column;
-  padding: 5px 0px 15px 10px;
-  margin: auto
-  }
-
+  padding: 15px 0px 15px 10px;
+  margin-left: 10px;
+}
 
 audio { width: 100%; }
 
@@ -156,7 +152,6 @@ audio { width: 100%; }
   width: 22%;
   background-color: #c93c20;
   height: 100vh;
-
      }
 
 .row:after {

@@ -39,7 +39,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           Grain Select
         </div>
         Grain Meters
-        <div class="grainMeters">
+        <div class="meters">
           <div nexus-ui ="meter" id ="gMeter1"></div>
           <div nexus-ui ="meter" id ="gMeter2"></div>
           <div nexus-ui ="meter" id ="gMeter3"></div>
@@ -51,6 +51,17 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
         </div>
         <p2 id="generate"> Generate Parts </p2>
         <div nexus-ui="radiobutton" id ="generateParts">
+        </div>
+        Synth Meters
+        <div class="meters">
+          <div nexus-ui ="meter" id ="sMeter1"></div>
+          <div nexus-ui ="meter" id ="sMeter2"></div>
+          <div nexus-ui ="meter" id ="sMeter3"></div>
+          <div nexus-ui ="meter" id ="sMeter4"></div>
+          <div nexus-ui ="meter" id ="sMeter5"></div>
+          <div nexus-ui ="meter" id ="sMeter6"></div>
+          <div nexus-ui ="meter" id ="sMeter7"></div>
+          <div nexus-ui ="meter" id ="sMeter8"></div>
         </div>
       </div>
       <div class="columncenterL">
@@ -65,7 +76,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
         <div id="grains2">
           <p3 id="grainsizetext"> Grain Size & Overlap   </p3>
           <div nexus-ui ="position" id ="graincontrol3" style = "padding: 10px 10px 10px 10px"></div>
-          <p3> Filter Control (to do)</p3>
+          <p3> Filter & Delay </p3>
           <div nexus-ui ="position" id ="graincontrol4" style="padding: 10px 10px 10px 10px"></div>
         </div>
       </div>
@@ -82,10 +93,6 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
         <div id="sketch-holder"></div>
       </div>
       <div class="columnright">
-        <div id="bpmSlider">
-        <p3> BPM </p3 >
-        <div nexus-ui="slider" id ="bpm"></div>
-      </div>
         <div nexus-ui="rack" id="volumes">
           <p3 >Grain Volumes</p3 >
           <div nexus-ui ="slider" id ="gVolume1"></div>
@@ -111,9 +118,12 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div nexus-ui="slider" id ="grainVol"></div>
             <p3 >Synth Bus</p3 >
           <div nexus-ui="slider" id ="synthVol"></div>
+          <p3> BPM </p3 >
+          <div nexus-ui="slider" id ="bpmSlider"></div>
+          <p3> Melody Length </p3 >
+          <div nexus-ui="slider" id ="melLengthSlider"></div>
         </div>
       </div>
-
     </div>
   </body>
 </html>
