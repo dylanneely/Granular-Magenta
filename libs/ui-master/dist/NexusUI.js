@@ -243,7 +243,7 @@ return /******/ (function(modules) { // webpackBootstrap
 	  Envelope: __webpack_require__(34),
 	  Spectrogram: __webpack_require__(35),
 	  Meter: __webpack_require__(36),
-	  Oscilloscope: __webpack_require__(37)
+	  Oscilloscope: __webpack_require__(37),
 	};
 
 /***/ }),
@@ -2975,11 +2975,11 @@ return /******/ (function(modules) { // webpackBootstrap
 	    },
 	    sizeInterface: {
 	      value: function sizeInterface() {
-	        var textsize = this.height / 3;
-	        var textsize2 = this.width / (this._text.length + 2);
-	        textsize = Math.min(textsize, textsize2);
+	        var textsize = this.height / 1.5;
+	         var textsize2 = this.width / (this._text.length);
+	         textsize = Math.min(textsize, textsize2);
 	        if (this.alternateText) {
-	          var textsize3 = this.width / (this.alternateText.length + 2);
+	          var textsize3 = this.width / (this.alternateText.length);
 	          textsize = Math.min(textsize, textsize3);
 	        }
 	        var styles = "width: " + this.width + "px;";

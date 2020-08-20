@@ -31,15 +31,14 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
     <h1 >
     <div class="row">
       <div class="columnleft">
-        <p id="startText">Start</p>
-        <div nexus-ui="button" id="start">
+        <div class="circle" nexus-ui="TextButton" id="start">
         </div>
         <div class="textbutton" id="loopGrain">
         </div>
-        <p Grain Select</p>
+        <h3 id="generate"> Grain Select</h3>
         <div nexus-ui="radiobutton" id ="grainSelect">
         </div>
-          <p Grain Meters</p>
+          <p> Grain Meters</p>
         <div class="meters">
           <div nexus-ui ="meter" id ="gMeter1"></div>
           <div nexus-ui ="meter" id ="gMeter2"></div>
@@ -50,10 +49,10 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div nexus-ui ="meter" id ="gMeter7"></div>
           <div nexus-ui ="meter" id ="gMeter8"></div>
         </div>
-        <p id="generate"> Generate Parts </p>
+        <h3 id="generate"> Generate Parts </h3>
         <div nexus-ui="radiobutton" id ="generateParts">
         </div>
-          <Synth Meters </>
+          <p>Synth Meters </p>
         <div class="meters">
           <div nexus-ui ="meter" id ="sMeter1"></div>
           <div nexus-ui ="meter" id ="sMeter2"></div>
@@ -68,18 +67,20 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
       <div class="columncenterL">
         <div id="grains">
           <p id="looptext" > Start Position & Loop Size  </p>
-          <div nexus-ui ="position" id ="graincontrol1" style = "padding: 10px 10px 10px 10px"></div>
+          <div class = "controls" nexus-ui ="position" id ="graincontrol1"></div>
           <p>Playback Rate & Detune  </p>
-          <div nexus-ui ="position" id ="graincontrol2" style= "padding: 10px 10px 10px 10px"></div>
+          <div class = "controls" nexus-ui ="position" id ="graincontrol2"></div>
         </div>
+        <div id="sketch-holderA"></div>
       </div>
       <div class="columncenter">
         <div id="grains2">
           <p id="grainsizetext"> Grain Size & Overlap   </p>
-          <div nexus-ui ="position" id ="graincontrol3" style = "padding: 10px 10px 10px 10px"></div>
+          <div class = "controls" nexus-ui ="position" id ="graincontrol3"></div>
           <p> Filter & Delay </p>
-          <div nexus-ui ="position" id ="graincontrol4" style="padding: 10px 10px 10px 10px"></div>
+          <div class = "controls" nexus-ui ="position" id ="graincontrol4"></div>
         </div>
+        <div id="sketch-holderB"></div>
       </div>
       <div class="columncenterR">
         <p id="instructions"> Pick a Sound or Record Your Own </p>
@@ -94,35 +95,35 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
         <div id="sketch-holder"></div>
       </div>
       <div class="columnright">
-        <div nexus-ui="rack" id="volumes">
-          <p >Grain Volumes</p >
-          <div nexus-ui ="slider" id ="gVolume1"></div>
-          <div nexus-ui ="slider" id ="gVolume2"></div>
-          <div nexus-ui ="slider" id ="gVolume3"></div>
-          <div nexus-ui ="slider" id ="gVolume4"></div>
-          <div nexus-ui ="slider" id ="gVolume5"></div>
-          <div nexus-ui ="slider" id ="gVolume6"></div>
-          <div nexus-ui ="slider" id ="gVolume7"></div>
-          <div nexus-ui ="slider" id ="gVolume8"></div>
-          <p >Synth Volumes    </p >
-          <div nexus-ui ="slider" id ="sVolume1"></div>
-          <div nexus-ui ="slider" id ="sVolume2"></div>
-          <div nexus-ui ="slider" id ="sVolume3"></div>
-          <div nexus-ui ="slider" id ="sVolume4"></div>
-          <div nexus-ui ="slider" id ="sVolume5"></div>
-          <div nexus-ui ="slider" id ="sVolume6"></div>
-          <div nexus-ui ="slider" id ="sVolume7"></div>
-          <div nexus-ui ="slider" id ="sVolume8"></div>
-            <p >Drone Synth  </p >
-          <div nexus-ui="slider" id ="droneVol"></div>
-            <p >Grain Bus</p >
-          <div nexus-ui="slider" id ="grainVol"></div>
-            <p >Synth Bus</p >
-          <div nexus-ui="slider" id ="synthVol"></div>
-          <p> BPM </p >
-          <div nexus-ui="slider" id ="bpmSlider"></div>
-          <p> Melody Length </p >
-          <div nexus-ui="slider" id ="melLengthSlider"></div>
+        <div class="rack" id="volumes">
+          <pre>Grain Volumes </pre>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume1"></div>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume2"></div>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume3"></div>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume4"></div>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume5"></div>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume6"></div>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume7"></div>
+          <div class = "rack" nexus-ui ="slider" id ="gVolume8"></div>
+          <pre >Synth Volumes    </pre >
+          <div class = "rack" nexus-ui ="slider" id ="sVolume1"></div>
+          <div class = "rack" nexus-ui ="slider" id ="sVolume2"></div>
+          <div class = "rack" nexus-ui ="slider" id ="sVolume3"></div>
+          <div class = "rack" nexus-ui ="slider" id ="sVolume4"></div>
+          <div class = "rack" nexus-ui ="slider" id ="sVolume5"></div>
+          <div class = "rack"nexus-ui ="slider" id ="sVolume6"></div>
+          <div class = "rack"nexus-ui ="slider" id ="sVolume7"></div>
+          <div class = "rack"nexus-ui ="slider" id ="sVolume8"></div>
+            <pre> Drone Synth  </pre >
+          <div class = "rack"nexus-ui="slider" id ="droneVol"></div>
+            <pre >Grain Bus</pre >
+          <div class = "rack"nexus-ui="slider" id ="grainVol"></div>
+            <pre >Synth Bus</pre >
+          <div class = "rack" nexus-ui="slider" id ="synthVol"></div>
+          <pre> BPM </pre >
+          <div class = "rack"nexus-ui="slider" id ="bpmSlider"></div>
+          <pre> Melody Length </pre >
+          <div class = "rack" nexus-ui="slider" id ="melLengthSlider"></div>
         </div>
       </div>
     </div>
