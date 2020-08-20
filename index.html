@@ -28,17 +28,18 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
   </head>
   <body>
     <audio controls hidden> style=""</audio>
+    <h1 >
     <div class="row">
       <div class="columnleft">
         <p id="startText">Start</p>
         <div nexus-ui="button" id="start">
         </div>
-        <div nexus-ui="textbutton" id="loopGrain">
+        <div class="textbutton" id="loopGrain">
         </div>
+        <p Grain Select</p>
         <div nexus-ui="radiobutton" id ="grainSelect">
-          Grain Select
         </div>
-        Grain Meters
+          <p Grain Meters</p>
         <div class="meters">
           <div nexus-ui ="meter" id ="gMeter1"></div>
           <div nexus-ui ="meter" id ="gMeter2"></div>
@@ -49,10 +50,10 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div nexus-ui ="meter" id ="gMeter7"></div>
           <div nexus-ui ="meter" id ="gMeter8"></div>
         </div>
-        <p2 id="generate"> Generate Parts </p2>
+        <p id="generate"> Generate Parts </p>
         <div nexus-ui="radiobutton" id ="generateParts">
         </div>
-        Synth Meters
+          <Synth Meters </>
         <div class="meters">
           <div nexus-ui ="meter" id ="sMeter1"></div>
           <div nexus-ui ="meter" id ="sMeter2"></div>
@@ -66,22 +67,22 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
       </div>
       <div class="columncenterL">
         <div id="grains">
-          <p3 id="looptext" > Start Position & Loop Size  </p3>
+          <p id="looptext" > Start Position & Loop Size  </p>
           <div nexus-ui ="position" id ="graincontrol1" style = "padding: 10px 10px 10px 10px"></div>
-          <p3>Playback Rate & Detune  </p3>
+          <p>Playback Rate & Detune  </p>
           <div nexus-ui ="position" id ="graincontrol2" style= "padding: 10px 10px 10px 10px"></div>
         </div>
       </div>
       <div class="columncenter">
         <div id="grains2">
-          <p3 id="grainsizetext"> Grain Size & Overlap   </p3>
+          <p id="grainsizetext"> Grain Size & Overlap   </p>
           <div nexus-ui ="position" id ="graincontrol3" style = "padding: 10px 10px 10px 10px"></div>
-          <p3> Filter & Delay </p3>
+          <p> Filter & Delay </p>
           <div nexus-ui ="position" id ="graincontrol4" style="padding: 10px 10px 10px 10px"></div>
         </div>
       </div>
       <div class="columncenterR">
-        <p3 id="instructions"> Pick a Sound or Record Your Own </p3>
+        <p id="instructions"> Pick a Sound or Record Your Own </p>
         <div nexus-ui="dropdown" id ="dropdown" accept="audio/*">
         </div>
         <input type="file" id="load"></input >
@@ -94,7 +95,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
       </div>
       <div class="columnright">
         <div nexus-ui="rack" id="volumes">
-          <p3 >Grain Volumes</p3 >
+          <p >Grain Volumes</p >
           <div nexus-ui ="slider" id ="gVolume1"></div>
           <div nexus-ui ="slider" id ="gVolume2"></div>
           <div nexus-ui ="slider" id ="gVolume3"></div>
@@ -103,7 +104,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div nexus-ui ="slider" id ="gVolume6"></div>
           <div nexus-ui ="slider" id ="gVolume7"></div>
           <div nexus-ui ="slider" id ="gVolume8"></div>
-          <p3 >Synth Volumes    </p3 >
+          <p >Synth Volumes    </p >
           <div nexus-ui ="slider" id ="sVolume1"></div>
           <div nexus-ui ="slider" id ="sVolume2"></div>
           <div nexus-ui ="slider" id ="sVolume3"></div>
@@ -112,18 +113,19 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div nexus-ui ="slider" id ="sVolume6"></div>
           <div nexus-ui ="slider" id ="sVolume7"></div>
           <div nexus-ui ="slider" id ="sVolume8"></div>
-            <p3 >Drone Synth  </p3 >
+            <p >Drone Synth  </p >
           <div nexus-ui="slider" id ="droneVol"></div>
-            <p3 >Grain Bus</p3 >
+            <p >Grain Bus</p >
           <div nexus-ui="slider" id ="grainVol"></div>
-            <p3 >Synth Bus</p3 >
+            <p >Synth Bus</p >
           <div nexus-ui="slider" id ="synthVol"></div>
-          <p3> BPM </p3 >
+          <p> BPM </p >
           <div nexus-ui="slider" id ="bpmSlider"></div>
-          <p3> Melody Length </p3 >
+          <p> Melody Length </p >
           <div nexus-ui="slider" id ="melLengthSlider"></div>
         </div>
       </div>
     </div>
+  </h1>
   </body>
 </html>

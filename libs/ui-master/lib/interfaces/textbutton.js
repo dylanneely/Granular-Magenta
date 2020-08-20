@@ -80,13 +80,13 @@ export default class TextButton extends ButtonTemplate {
     this.render();
   }
 
-  sizeInterface() {
-      let textsize = this.height/3;
-      let textsize2 = (this.width / (this._text.length + 2) );
-      textsize = Math.min(textsize,textsize2);
-      if (this.alternateText) {
-        let textsize3 = (this.width / (this.alternateText.length + 2) );
-        textsize = Math.min(textsize,textsize3);
+  sizeInterface() { //manual override
+      let textsize = this.height/1.5;
+    //  let textsize2 = (this.width / (this._text.length + 2) );
+    //  textsize = Math.min(textsize,textsize2);
+      // if (this.alternateText) {
+      //   let textsize3 = (this.width / (this.alternateText.length + 2) );
+      //   textsize = Math.min(textsize,textsize3);
       }
       let styles = 'width: ' + this.width + 'px;';
       styles += 'height: ' + this.height + 'px;';
