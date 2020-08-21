@@ -10,6 +10,7 @@ let start_note = 60;
 let grainSelect = 0;
 let melLength = 30;
 let fRate = 30;
+let userBufs = [];
 
 const audio = document.querySelector('audio');
 const actx  = Tone.context;
@@ -23,13 +24,14 @@ mic.connect(recDest);
 Nexus.context = actx._context;
 
 const baseURL = "https://storage.googleapis.com/audioassets/";
-let buf_list = {0: "Vessel1.wav", 1: "Bowl1.wav", 2: "Bowl2.wav", 3: "BattabangBell.wav", 4: "DianBell.wav", 5: "Frogs.wav", 6: "SolarSounder1.wav", 7: "WindWaves.wav"};
-let bufListLength = Object.keys(buf_list).length; // 8
-let grain_list = ["grain1", "grain2", "grain3", "grain4", "grain5", "grain6", "grain7", "grain8"];
+let bufList = {0: "Vessel1.wav", 1: "Bowl1.wav", 2: "Bowl2.wav", 3: "BattabangBell.wav", 4: "DianBell.wav", 5: "Frogs.wav", 6: "SolarSounder1.wav", 7: "WindWaves.wav"};
+let bufOrder = {...bufList};
+let bufListLength = Object.keys(bufList).length; // 8
+let grainList = ["grain1", "grain2", "grain3", "grain4", "grain5", "grain6", "grain7", "grain8"];
 let pitchShiftList = ["pitchShift1", "pitchShift2", "pitchShift3", "pitchShift4", "pitchShift5", "pitchShift6", "pitchShift7", "pitchShift8"];
 let gVolumeList = ["gVolume1","gVolume2","gVolume3","gVolume4","gVolume5","gVolume6","gVolume7","gVolume8"]
 let sVolumeList = ["sVolume1","sVolume2","sVolume3","sVolume4","sVolume5","sVolume6","sVolume7","sVolume8", "droneVol"]
-let states_array = [];
+let statesArray = [];
 let patternList = ["pattern1", "pattern2", "pattern3", "pattern4", "pattern5", "pattern6", "pattern7", "pattern8"]
 let synthList = ["synth1", "synth2", "synth3", "synth4", "synth5", "synth6", "synth7", "synth8"]
 let chorusList = ["chorus1", "chorus2", "chorus3", "chorus4", "chorus5", "chorus6", "chorus7", "chorus8"]
@@ -43,13 +45,13 @@ let filterCutoff = 3000;
 
 //CREATE OUR BUFFERS
 buffers = new Tone.ToneAudioBuffers({
-           urls: buf_list,
+           urls: bufList,
            baseUrl: baseURL
         });
 
 //CREATE OUR PLAYERS & PROCESSING NODES
-for (grainNum in grain_list) {
-        grain_list[grainNum] = new Tone.GrainPlayer(buffers.get(grainNum));
+for (grainNum in grainList) {
+        grainList[grainNum] = new Tone.GrainPlayer(buffers.get(grainNum));
     }
 
 for (pitchShift in pitchShiftList) {
@@ -72,9 +74,9 @@ for (chorus in chorusList) {
     }
 
 for (filt in sFilterList) {
-      let cutoff = randomMIDIpitch(800, 3200);
+      let cutoff = randomMIDIpitch(800, 2400);
       let octaves = randomMIDIpitch(1, 3);
-      sFilterList[filt] = new Tone.AutoFilter(Math.random(), cutoff, 2);
+      sFilterList[filt] = new Tone.AutoFilter(Math.random(), cutoff, octaves); //oscillation rate up to 1 Hz
     }
 
 for (filt in gFilterList) {
@@ -106,8 +108,8 @@ for (synth in synthList) {
      synthList[synth].set({
 	      envelope: {
 		        attack: Math.random() * 0.1,
-            decay: Math.random() * 0.3,
-            sustain: Math.random() * 0.7 + 0.3,
+            decay: Math.random() * 0.2,
+            sustain: Math.random() * 0.3 + 0.7,
             release: Math.random() * 0.5,
 	         }
          })
@@ -144,9 +146,9 @@ grainBusGain.connect(recDest); //connect these before verb to avoid muddying out
 synthBusGain.connect(recDest);
 synth_drone.chain(sVolumeList[8], autoFilter, synthBusGain, verb);
 
-for (let i = 0; i < grain_list.length; i++) { //handle grain and synth routing together
-    grain_list[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], grainBusGain, verb);
-    grain_list[i].sync();
+for (let i = 0; i < grainList.length; i++) { //handle grain and synth routing together
+    grainList[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], grainBusGain, verb);
+    grainList[i].sync();
     synthList[i].chain(chorusList[i], sFilterList[i], sVolumeList[i], synthBusGain, verb);
     synthList[i].sync();
   }
@@ -164,6 +166,9 @@ const s = ( sketch ) => {
     sketch.strokeWeight(2);
     sketch.fill('rgba(220,220,220, 0)')
     sketch.rect(0, 0, cnvWidth, cnvHeight);
+    sketch.textFont("Garamond");
+    sketch.textSize(20);
+    sketch.textAlign(sketch.CENTER, sketch.CENTER);
   };
 
   sketch.draw = () => {
@@ -180,10 +185,13 @@ function drawBuffer() {
   p.clear();
   p.background(220);
   p.stroke("#11249c");
+  p.strokeWeight(1);
+  p.fill("#11249c");
+  p.text(bufOrder[grainSelect], cnvWidth/2, 20);
   p.strokeWeight(2);
   p.fill('rgba(220,220,220, 0)');
   p.rect(0, 0, cnvWidth, cnvHeight);
-  const buffer = grain_list[grainSelect].buffer.getChannelData();
+  const buffer = grainList[grainSelect].buffer.getChannelData();
   const bandSize = cnvWidth / buffer.length;
   p.stroke("#11249c");
   p.beginShape();
@@ -196,8 +204,8 @@ function drawLoop() { //redrawing buffer on every call slows down audio when red
                       //What's the solution without multiple threads? I've tried slightly slowing frame rate, but don't want drawing to look laggy
                       //Even a 1fps rate doesn't solve problem w/r/t audio. Not drawing buffer as often helps, but setting the loop needs to feel responsive.
   drawBuffer();
-  loopStart = (grain_list[grainSelect].loopStart / grain_list[grainSelect].buffer.duration) * cnvWidth;
-  loopEnd = (grain_list[grainSelect].loopEnd / grain_list[grainSelect].buffer.duration) * cnvWidth;
+  loopStart = (grainList[grainSelect].loopStart / grainList[grainSelect].buffer.duration) * cnvWidth;
+  loopEnd = (grainList[grainSelect].loopEnd / grainList[grainSelect].buffer.duration) * cnvWidth;
   // console.log(loopStart + " " + loopEnd);
   p.stroke('rgba(34,139,34,0.8)');
   p.fill('rgba(34,139,34,0.25)');
@@ -211,7 +219,7 @@ function drawLoop() { //redrawing buffer on every call slows down audio when red
 
 //HELPER FUNCTIONS
 function loopsize(x, y) {
-  slicedur = grain_list[grainSelect].buffer.duration;
+  slicedur = grainList[grainSelect].buffer.duration;
 	let start = slicedur * x;
 	let end = (start + (slicedur * (1-y)+0.001)) % slicedur;
   return [start, end];
@@ -234,36 +242,25 @@ function record() {
   }
 }
 
-let userBufs = [];
-
 async function recordToBuf (blob) {
     userAudio = await new Tone.ToneAudioBuffer(blob); //works with both recorded output and input
-    console.log(grain_list[grainSelect]);
-    buf_list[bufListLength] = "User Sound " + (bufListLength - 7); //should grab file name, and separate from live input
-    dropdown.defineOptions(Object.values(buf_list)); //add to dropdown list
-    userBufs.push(userAudio);
+    bufList[bufListLength] = "User Sound " + (bufListLength - 7); //add to dropdown list
+    userBufs.push(userAudio); //keep track of user buffers
+    dropdown.defineOptions(Object.values(bufList)); //reorder dropdown list
     dropdown.selectedIndex = bufListLength; //triggers newGrainBuf
     bufListLength++;
+    document.getElementById("audioshow").style.display = "block";
   }
 
-async function newGrainBuf(userAudio) { //set buffer
+async function newGrainBuf(userAudioIndex) { //set buffer
     Tone.Transport.schedule((time) => { //double-check to draw buffer, since it's failing ~20% of the time
       newBuf = true}, Tone.now() + 0.1);
-    grain_list[grainSelect].buffer = await userAudio;
+    grainList[grainSelect].buffer = await userBufs[userAudioIndex];
+    console.log(grainList[grainSelect]);
+    //save location of grainselect with where buffer is in buflist
+    bufOrder[grainSelect] = bufList[userAudioIndex+8];
     newBuf = true; //draw new buffer
   }
-//LOADS SOUND
-load.onchange = function() {
-  var sound = document.getElementById("sound");
-  var reader = new FileReader();
-  reader.onloadend = function(e) {
-    actx.decodeAudioData(this.result).then(function(buffer) {
-    userAudio = new Tone.ToneAudioBuffer(buffer); //Created new buffer, because
-    newGrainBuf(userAudio); //accessing adding the buffer to buffersList by dictionary was tricky
-  });
-  };
-  reader.readAsArrayBuffer(this.files[0]);
-};
 
 //AI GENERATION
 let melodyRnn = new music_rnn.MusicRNN( 'https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/melody_rnn');
@@ -302,22 +299,23 @@ async function generateMelody() {
 }
 //UI Elements
 let startButton = new Nexus.TextButton('#start',{
-  'size': [80, 80],
+  'size': [80, 80], //manually set below
   'state': false,
   'text': 'Start',
   'alternateText': 'Stop'
 });
+//startButton.element.style.class = "circle";  //make this circular
+startButton.textElement.style.cssText = 'padding: 30px 5px 30px 5px; text-align: center; font-family: Garamond; font-size: 22px; font-style: normal; font-weight: 400; line-height: 12px; '
+startButton.colorize("accent", "#12161c");
 
-startButton.element.style.class = "circle"; //make this circular
-startButton.colorize("accent", "#12161c")
 
 let recordButton = new Nexus.TextButton('#record', {
     'size': [150,50],
     'state': false,
-    'text': 'Overdub Output',
+    'text': 'Overdub',
     'alternateText': 'Stop Recording'
 })
-recordButton.textElement.style.cssText = 'padding: 15px 0px 15px 0px; text-align: center; font-family: Palatino; font-size: 16px; font-style: normal; font-variant: small-caps; font-weight: 400; line-height: 12px; '
+recordButton.textElement.style.cssText = 'padding: 15px 0px 15px 0px; text-align: center; font-family: Garamond; font-size: 16px; font-style: normal; font-weight: 400; line-height: 12px; '
 recordButton.colorize("accent", "#12161c")
 
 let grainLoop = new Nexus.TextButton('#loopGrain', {
@@ -327,7 +325,7 @@ let grainLoop = new Nexus.TextButton('#loopGrain', {
     'alternateText': 'Start Looping Grains'
 })
 grainLoop.colorize("accent", "#12161c")
-grainLoop.textElement.style.cssText = 'padding: 15px 0px 15px 0px; text-align: center; font-family: Palatino; font-size: 16px; font-style: normal; font-variant: small-caps; font-weight: 400; line-height: 12px; '
+grainLoop.textElement.style.cssText = 'padding: 15px 0px 15px 0px; text-align: center; font-family: Garamond; font-size: 16px; font-style: normal; font-variant: normal; font-weight: 400; line-height: 12px; '
 
 let recordMic = new Nexus.TextButton('#recordmic', {
     'size': [150,50],
@@ -335,7 +333,7 @@ let recordMic = new Nexus.TextButton('#recordmic', {
     'text': 'Record Input',
     'alternateText': 'Stop Recording'
 })
-recordMic.textElement.style.cssText = 'padding: 15px 0px 15px 0px; text-align: center; font-family: Palatino; font-size: 16px; font-style: normal; font-variant: small-caps; font-weight: 400; line-height: 12px; '
+recordMic.textElement.style.cssText = 'padding: 15px 0px 15px 0px; text-align: center; font-family: Garamond; font-size: 16px; font-style: normal; font-variant: normal; font-weight: 400; line-height: 12px; '
 recordMic.colorize("accent", "#12161c")
 
 let generateParts = new Nexus.RadioButton('#generateParts',{
@@ -354,7 +352,7 @@ grainSelectButton.colorize("accent", "#12161c")
 
 let dropdown = new Nexus.Select('#dropdown',{
   'size': [150,35],
-  'options': Object.values(buf_list)
+  'options': Object.values(bufList)
 });
 
 let spectrogram = new Nexus.Spectrogram('#spectrogram',{
@@ -385,21 +383,21 @@ grainsControl.graincontrol2.stepX = 0.01;
 grainsControl.graincontrol2.stepY = 1;
 grainsControl.graincontrol2.y = 0; //detune
 grainsControl.graincontrol2.x = 1.0; //playback
-grainsControl.graincontrol2.minY = -100;
-grainsControl.graincontrol2.maxY = 100;
+grainsControl.graincontrol2.minY = -1200;
+grainsControl.graincontrol2.maxY = 1200;
 grainsControl.graincontrol2.minX = 0.1;
 grainsControl.graincontrol2.maxX = 10;
 //GRAIN SIZE & OVERLAP
 grainsControl2.graincontrol3.colorize("fill","#DCDCDC");
 grainsControl2.graincontrol3.colorize("accent", "#11249c");
 grainsControl2.graincontrol3.x = 0.2;
-grainsControl2.graincontrol3.maxX = 0.5;
+grainsControl2.graincontrol3.maxX = 2.0;
 grainsControl2.graincontrol3.stepX = 0.001;
 grainsControl2.graincontrol3.stepY = 0.001;
 grainsControl2.graincontrol3.y = 0.1;
 grainsControl2.graincontrol3.minY = 0.01;
 grainsControl2.graincontrol3.minX = 0.01;
-grainsControl2.graincontrol3.maxY = 1.0;
+grainsControl2.graincontrol3.maxY = 2.0;
 //FILTER CONTROL
 grainsControl2.graincontrol4.colorize("fill","#DCDCDC");
 grainsControl2.graincontrol4.colorize("accent", "#11249c");
@@ -411,7 +409,7 @@ grainsControl2.graincontrol4.minX = 1000;
 grainsControl2.graincontrol4.maxX = 16000;
 //VOLUME SLIDERS
 let volumes = new Nexus.Rack("#volumes");
-let minVol = -100; let maxVol = 24; let defVol = -6; let sDefVol = -12; let sMaxVol = 12;
+let minVol = -80; let maxVol = 24; let defVol = -6; let sDefVol = -12; let sMaxVol = 12;
 let volumesUI = [volumes.gVolume1, volumes.gVolume2, volumes.gVolume3, volumes.gVolume4, volumes.gVolume5, volumes.gVolume6, volumes.gVolume7, volumes.gVolume8,
                 volumes.sVolume1, volumes.sVolume2, volumes.sVolume3, volumes.sVolume4, volumes.sVolume5, volumes.sVolume6, volumes.sVolume7, volumes.sVolume8];
 
@@ -471,8 +469,8 @@ volumes.melLengthSlider.resize(200, 20);
 var numBPM = new Nexus.Number('#numBPM');
 var numLen = new Nexus.Number('#numLen');
 // numBPM.resize(40, 20); //manual override with additional styling below
-numBPM.element.style.cssText = 'width: 40px; height: 20px; text-align: center; font-family: Palatino; font-size: 14px; font-style: bold; font-variant: small-caps; font-weight: 400; line-height: 14px; background-color: transparent; '
-numLen.element.style.cssText = 'width: 40px; height: 20px; text-align: center; font-family: Palatino; font-size: 14px; font-style: bold; font-variant: small-caps; font-weight: 400; line-height: 14px; background-color: transparent;'
+numBPM.element.style.cssText = 'width: 40px; height: 20px; text-align: center; font-family: Garamond; font-size: 14px; font-style: bold; font-variant: normal; font-weight: 400; line-height: 14px; background-color: transparent; '
+numLen.element.style.cssText = 'width: 40px; height: 20px; text-align: center; font-family: Garamond; font-size: 14px; font-style: bold; font-variant: normal; font-weight: 400; line-height: 14px; background-color: transparent;'
 numBPM.link(volumes.bpmSlider);
 numLen.link(volumes.melLengthSlider);
 
@@ -503,8 +501,8 @@ startButton.on('change',async function(v) {
 else {
   Tone.Transport.stop();
   synth_drone.triggerRelease(seedChordFreq);
-  for (grain in grain_list) {
-    if (grain_list[grain].state == "started") {	grain_list[grain].stop(); grain_list[grain].state = "stopped";}
+  for (grain in grainList) {
+    if (grainList[grain].state == "started") {	grainList[grain].stop(); grainList[grain].state = "stopped";}
   }
   if (recorder.state == "active") {recorder.stop();}
 }
@@ -526,11 +524,11 @@ grainLoop.on('change',async function(v) {
   if (v == false) {
     await Tone.start();
     grainLooping = true;
-    grain_list[grainSelect].loop = true;
-    grain_list[grainSelect].start();
-  //  if (grain_list[grainSelect].state == "stopped") {grain_list[grainSelect].start()};
+    grainList[grainSelect].loop = true;
+    grainList[grainSelect].start();
+  //  if (grainList[grainSelect].state == "stopped") {grainList[grainSelect].start()};
   } else {
-    for (grain in grain_list) {grain_list[grain].loop = false; grain_list[grain].stop();}
+    for (grain in grainList) {grainList[grain].loop = false; grainList[grain].stop();}
     grainLooping = false;
   }
 })
@@ -561,7 +559,7 @@ generateParts.on('change', async function(v) {
       patternList[v] = new Tone.Part(((time, note) => {
         pitchShiftList[v].pitch = (note - start_note);
         synthList[v].triggerAttackRelease(Tone.Frequency(note, "midi"), "2n", time);
-        if (grain_list[v].state != "started") {grain_list[v].start(time);}//
+        if (grainList[v].state != "started") {grainList[v].start(time);}//
     }), zip);
       patternList[v].loop = true;
       patternList[v].loopEnd = startArray[startArray.length-1];
@@ -575,21 +573,20 @@ generateParts.on('change', async function(v) {
       patternList[v].dispose();
       console.log("patttern " + v + " ended!");
       // if(grainSelect != v) {volumesUI[v].colorize("accent","#DCDCDC"); //Recolor volume to off position
-      // grain_list[v].stop(); //leave grains going unless they're manually turned off by user
-      // }
+      // grainList[v].stop();} //leave grains going unless they're manually turned off by user
       volumesUI[v+8].colorize("accent","#DCDCDC");
    }, Tone.now() + melLength);
-      states_array.push(v); //Tracker for which melodies are playing
+      statesArray.push(v); //Tracker for which melodies are playing
     })
   }
   else if (v==-1){ //Turn off melody earlier manually
-    let lastPlayed = states_array[states_array.length-1];
+    let lastPlayed = statesArray[statesArray.length-1];
     patternList[lastPlayed].stop();  //patternList[pattern].clear();
-    grain_list[lastPlayed].stop();
+    grainList[lastPlayed].stop();
     console.log("stop " + patternList[lastPlayed]);
     volumesUI[lastPlayed].colorize("accent","#DCDCDC");
     volumesUI[lastPlayed+8].colorize("accent","#DCDCDC");
-    states_array.pop();
+    statesArray.pop();
     }
 })
 
@@ -600,26 +597,38 @@ grainSelectButton.on('change', function(v) {
   spectrogram.connect(gVolumeList[v]);
   oscilloscope.connect(gVolumeList[v]);
   volumesUI[grainSelect].colorize("accent","#12161c");
-  dropdown.selectedIndex = v;
     if (grainLooping == true) {
-      grain_list[grainSelect].loop = true;
+      grainList[grainSelect].loop = true;
     };
-    if (grain_list[grainSelect].state == "stopped") {grain_list[grainSelect].start()}
+    if (grainList[grainSelect].state == "stopped") {grainList[grainSelect].start();// dropdown.selectedIndex = grainSelect;
+    }
+    else { //grain part is already going - check that X/Y pads correspond
+      grainsControl.graincontrol1.x = grainList[grainSelect].loopStart / grainList[grainSelect].buffer.duration;
+      grainsControl.graincontrol1.y = grainList[grainSelect].loopEnd / grainList[grainSelect].buffer.duration;
+      grainsControl.graincontrol2.x = grainList[grainSelect].playbackRate;
+      grainsControl.graincontrol2.y = grainList[grainSelect].detune;
+      grainsControl2.graincontrol3.x =grainList[grainSelect].grainSize;
+      grainsControl2.graincontrol3.y =grainList[grainSelect].overlap;
+      grainsControl2.graincontrol4.x = gFilterList[grainSelect].frequency.value;
+      if (delayList[grainSelect].wet.value < 1) {grainsControl2.graincontrol4.y = delayList[grainSelect].wet.value / 1.25}
+      else {grainsControl2.graincontrol4.y = delayList[grainSelect].feedback.value + 0.1; }
+    }
   }
   else {
-    grain_list[grainSelect].loop = false;
+    grainList[grainSelect].loop = false;
     volumesUI[grainSelect].colorize("accent","#DCDCDC");
   }
 })
 
 dropdown.on('change',async function(v) {
   await Tone.start();
-  let keys = Object.keys(buf_list);
+  let keys = Object.keys(bufList);
   if (v.index >= 8) {
-    newGrainBuf(userBufs[v.index-8]);
+    newGrainBuf(v.index-8);
   }
   if (v.index < 8) {
-  grain_list[grainSelect].buffer = buffers.get(keys[v.index]);
+  grainList[grainSelect].buffer = buffers.get(keys[v.index]);
+  bufOrder[grainSelect] = bufList[v.index];
   newBuf = true; //doesn't draw correctly after record
 }
 });
@@ -636,8 +645,8 @@ volumes.bpmSlider.on('change', function(v){Tone.Transport.bpm.value = v;});
 volumes.melLengthSlider.on('change', function(v){melLength = v;});
 
 grainsControl.graincontrol1.on('change', function(v) //AS ABOVE - MANUALLY SETTING FOR EACH BECAUSE OF NEXUS ASSIGNMENT ISSUE
-        {let startend = loopsize(v.x, v.y); grain_list[grainSelect].loopStart = startend[0]; grain_list[grainSelect].loopEnd = startend[1];
-         if (startend[0] > startend[1]) {grain_list[grainSelect].reverse = true;} else {grain_list[grainSelect].reverse = false;}
+        {let startend = loopsize(v.x, v.y); grainList[grainSelect].loopStart = startend[0]; grainList[grainSelect].loopEnd = startend[1];
+         if (startend[0] > startend[1]) {grainList[grainSelect].reverse = true;} else {grainList[grainSelect].reverse = false;}
          if (grainLooping = true) {//smoothing attempt so that audio won't glitch constantly
                       //while redrawing buffer & loop constraints. This is better, but still not smooth.
          let oldX = v.x;
@@ -650,13 +659,29 @@ grainsControl.graincontrol1.on('change', function(v) //AS ABOVE - MANUALLY SETTI
        } else {newBuf = true;} //all good when no looping!
      });
 grainsControl.graincontrol2.on('change', function(v)
-        {grain_list[grainSelect].playbackRate = v.x; grain_list[grainSelect].detune = v.y;});
+        {grainList[grainSelect].playbackRate = v.x; grainList[grainSelect].detune = v.y;});
 grainsControl2.graincontrol3.on('change', function(v)
-        {	grain_list[grainSelect].grainSize = v.x; grain_list[grainSelect].overlap = v.y;});
+        {	grainList[grainSelect].grainSize = v.x; grainList[grainSelect].overlap = v.y;});
 grainsControl2.graincontrol4.on('change', function(v) //Filter and Delay Controls
         {filterCutoff = v.x;  gFilterList[grainSelect].frequency.value = filterCutoff;
           //use Y coordinates to set delay wet level up to a point, and then add additional feedback
-          if (v.y >= 0.8) {delayWet = 1; delayFeedback = (v.y * 0.4 + 0.5);}
-          if (v.y < 0.8) {delayWet = v.y;}
+          if (v.y >= 0.8) {delayWet = 1; delayFeedback = (v.y - 0.1);}
+          if (v.y < 0.8) {delayWet = v.y * 1.25;}
           delayList[grainSelect].wet.value = delayWet; delayList[grainSelect].feedback.value = delayFeedback;
         });
+        //LOADS SOUND
+load.onchange = function() {
+          var sound = document.getElementById("sound");
+          var reader = new FileReader();
+          reader.onloadend = function(e) {
+            actx.decodeAudioData(this.result).then(function(buffer) {
+            userAudio = new Tone.ToneAudioBuffer(buffer); //Create new buffer
+            bufList[bufListLength] = "User Sound " + (bufListLength - 7); //add to dropdown list
+            userBufs.push(userAudio); //keep track of user buffers
+            dropdown.defineOptions(Object.values(bufList)); //reorder dropdown list
+            dropdown.selectedIndex = bufListLength; //triggers newGrainBuf
+            bufListLength++;
+          });
+          };
+          reader.readAsArrayBuffer(this.files[0]);
+        };
