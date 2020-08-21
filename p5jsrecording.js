@@ -63,9 +63,6 @@ for (volume in sVolumeList) {
       sVolumeList[volume] = new Tone.Volume(-12);
     }
 
-let synthBus = new Tone.Volume(0);
-let grainBus = new Tone.Volume(0);
-
 for (pattern in patternList) {
       patternList[pattern] = new Tone.Part();
     }
@@ -145,12 +142,12 @@ let grainBusGain = new Tone.Gain(1).toDestination();
 const synthBusGain = new Tone.Gain(1).toDestination(); //not working
 grainBusGain.connect(recDest);
 synthBusGain.connect(recDest);
-synth_drone.chain(sVolumeList[8], autoFilter, verb, synthBus);
+synth_drone.chain(sVolumeList[8], autoFilter, verb, synthBusGain);
 
 for (let i = 0; i < grain_list.length; i++) { //handle grain and synth routing together
     grain_list[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], verb, grainBusGain);
     grain_list[i].sync();
-    synthList[i].chain(chorusList[i], sFilterList[i], sVolumeList[i], verb, synthBus);
+    synthList[i].chain(chorusList[i], sFilterList[i], sVolumeList[i], verb, synthBusGain);
     synthList[i].sync();
   }
 
