@@ -90,7 +90,7 @@ for (delay in delayList) {
 }
 //let verb = new Tone.Reverb(4);
 const ir = "".concat(baseURL, "SSet4N.wav"); //San Sabino Cathedral
-const verb = new Tone.Convolver(ir);
+const verb = new Tone.Convolver(ir).toDestination();
 
 //some variety of synths
 synthList[0] = new Tone.AMSynth();
@@ -138,16 +138,16 @@ let rhythmSeed = [randomMIDIpitch(1, 2), randomMIDIpitch(1, 3),randomMIDIpitch(1
 console.log(seedChordMIDI, rhythmSeed)
 
 //CONNECT EVERYTHING UP
-let grainBusGain = new Tone.Gain(1).toDestination();
-const synthBusGain = new Tone.Gain(1).toDestination(); //not working
-grainBusGain.connect(recDest);
+let grainBusGain = new Tone.Gain(1);
+const synthBusGain = new Tone.Gain(1);
+grainBusGain.connect(recDest); //connect these before verb to avoid muddying output record
 synthBusGain.connect(recDest);
-synth_drone.chain(sVolumeList[8], autoFilter, verb, synthBusGain);
+synth_drone.chain(sVolumeList[8], autoFilter, synthBusGain, verb);
 
 for (let i = 0; i < grain_list.length; i++) { //handle grain and synth routing together
-    grain_list[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], verb, grainBusGain);
+    grain_list[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], grainBusGain, verb);
     grain_list[i].sync();
-    synthList[i].chain(chorusList[i], sFilterList[i], sVolumeList[i], verb, synthBusGain);
+    synthList[i].chain(chorusList[i], sFilterList[i], sVolumeList[i], synthBusGain, verb);
     synthList[i].sync();
   }
 
@@ -573,9 +573,10 @@ generateParts.on('change', async function(v) {
       Tone.Transport.schedule((time) => {
   	  patternList[v].stop(time);
       patternList[v].dispose();
-      grain_list[v].stop();
       console.log("patttern " + v + " ended!");
-      volumesUI[v].colorize("accent","#DCDCDC"); //Recolor volume to off position
+      // if(grainSelect != v) {volumesUI[v].colorize("accent","#DCDCDC"); //Recolor volume to off position
+      // grain_list[v].stop(); //leave grains going unless they're manually turned off by user
+      // }
       volumesUI[v+8].colorize("accent","#DCDCDC");
    }, Tone.now() + melLength);
       states_array.push(v); //Tracker for which melodies are playing
