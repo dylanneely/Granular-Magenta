@@ -597,21 +597,21 @@ grainSelectButton.on('change', function(v) {
   spectrogram.connect(gVolumeList[v]);
   oscilloscope.connect(gVolumeList[v]);
   volumesUI[grainSelect].colorize("accent","#12161c");
+  //grain part is already going - check that X/Y pads correspond - disabled because it caused issues with UI - radio buttons wouldn't change colors for some reason
+  // grainsControl.graincontrol1.x = grainList[grainSelect].loopStart / grainList[grainSelect].buffer.duration;
+  // grainsControl.graincontrol1.y = 1 - ((grainList[grainSelect].loopStart - grainList[grainSelect].loopEnd-0.001) / grainList[grainSelect].buffer.duration);
+  // (start + (slicedur * (1-y)+0.001)) % slicedur;
+  // grainsControl.graincontrol2.x = grainList[grainSelect].playbackRate;
+  // grainsControl.graincontrol2.y = grainList[grainSelect].detune;
+  // grainsControl2.graincontrol3.x =grainList[grainSelect].grainSize;
+  // grainsControl2.graincontrol3.y =grainList[grainSelect].overlap;
+  // grainsControl2.graincontrol4.x = gFilterList[grainSelect].frequency.value;
+  // if (delayList[grainSelect].wet.value < 1) {grainsControl2.graincontrol4.y = delayList[grainSelect].wet.value / 1.25}
+  // else {grainsControl2.graincontrol4.y = delayList[grainSelect].feedback.value + 0.1; }
     if (grainLooping == true) {
       grainList[grainSelect].loop = true;
     };
     if (grainList[grainSelect].state == "stopped") {grainList[grainSelect].start();// dropdown.selectedIndex = grainSelect;
-    }
-    else { //grain part is already going - check that X/Y pads correspond
-      grainsControl.graincontrol1.x = grainList[grainSelect].loopStart / grainList[grainSelect].buffer.duration;
-      grainsControl.graincontrol1.y = grainList[grainSelect].loopEnd / grainList[grainSelect].buffer.duration;
-      grainsControl.graincontrol2.x = grainList[grainSelect].playbackRate;
-      grainsControl.graincontrol2.y = grainList[grainSelect].detune;
-      grainsControl2.graincontrol3.x =grainList[grainSelect].grainSize;
-      grainsControl2.graincontrol3.y =grainList[grainSelect].overlap;
-      grainsControl2.graincontrol4.x = gFilterList[grainSelect].frequency.value;
-      if (delayList[grainSelect].wet.value < 1) {grainsControl2.graincontrol4.y = delayList[grainSelect].wet.value / 1.25}
-      else {grainsControl2.graincontrol4.y = delayList[grainSelect].feedback.value + 0.1; }
     }
   }
   else {
