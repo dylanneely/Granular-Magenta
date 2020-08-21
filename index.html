@@ -35,7 +35,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
         </div>
         <div class="textbutton" id="loopGrain">
         </div>
-        <h3 id="generate"> Grain Select</h3>
+        <h3 id="generate"> Sound Selector </h3>
         <div nexus-ui="radiobutton" id ="grainSelect">
         </div>
           <p> Grain Meters</p>
@@ -49,7 +49,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div nexus-ui ="meter" id ="gMeter7"></div>
           <div nexus-ui ="meter" id ="gMeter8"></div>
         </div>
-        <h3 id="generate"> Generate Parts </h3>
+        <h3 id="generate"> Synthesis Selector </h3>
         <div nexus-ui="radiobutton" id ="generateParts">
         </div>
           <p>Synth Meters </p>
@@ -70,8 +70,8 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div class = "controls" nexus-ui ="position" id ="graincontrol1"></div>
           <p>Playback Rate & Detune  </p>
           <div class = "controls" nexus-ui ="position" id ="graincontrol2"></div>
+          <div class="visualizers" nexus-ui"oscilloscope" id="oscilloscope"></div>
         </div>
-        <div id="sketch-holderA"></div>
       </div>
       <div class="columncenter">
         <div id="grains2">
@@ -80,7 +80,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <p> Filter & Delay </p>
           <div class = "controls" nexus-ui ="position" id ="graincontrol4"></div>
         </div>
-        <div id="sketch-holderB"></div>
+        <div class="visualizers" nexus-ui"spectrogram" id="spectrogram"></div>
       </div>
       <div class="columncenterR">
         <p id="instructions"> Pick a Sound or Record Your Own </p>
@@ -93,6 +93,11 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
         <div nexus-ui="textbutton" id="recordmic">
         </div>
         <div id="sketch-holder"></div>
+        <p id="explanation">
+        Press start in the top left to begin crafting sonic environments! <br>
+        Sculpt sounds from the sound selector with the controls to their right. <br>
+        <br> Control the speed and the length of the synthesis selector patterns with the sliders to the right. <br><br>
+         Capture sculpted sounds with the overdub output button above, or record your own by pressing record input. </p>
       </div>
       <div class="columnright">
         <div class="rack" id="volumes">
@@ -120,9 +125,9 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div class = "rack"nexus-ui="slider" id ="grainVol"></div>
             <pre >Synth Bus</pre >
           <div class = "rack" nexus-ui="slider" id ="synthVol"></div>
-          <pre> BPM </pre >
+          <pre> BPM:  <span id="numBPM"></span> </pre >
           <div class = "rack"nexus-ui="slider" id ="bpmSlider"></div>
-          <pre> Melody Length </pre >
+          <pre> Melody Length (Seconds): <span id="numLen"></span> </pre >
           <div class = "rack" nexus-ui="slider" id ="melLengthSlider"></div>
         </div>
       </div>
