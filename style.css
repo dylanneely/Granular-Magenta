@@ -1,9 +1,7 @@
-
 body {
-  font-family: helvetica, arial, sans-serif;
-  background-color: #cddefa;
+  background-color: #DCDCDC;
+  margin: 0;
 }
-
 
 h1 { font-family: Garamond; font-size: 24px; font-style: normal; font-variant: normal; font-weight: 700; line-height: 23px; }
 h3 { font-family: Garamond; font-size: 24px; font-style: normal; font-variant: normal; font-weight: 700; line-height: 23px; }
@@ -15,64 +13,22 @@ pre { text-align: center; font-family: Garamond; font-size: 16px; font-style: no
   margin: auto;
   padding: 10px 15px 10px 15px;
 }
-[nexus-ui] {
-  width:100%;
-  height:100%;
-}
 
 #start {
   padding: 15px 0px 15px 0px;
   margin: auto;
 }
 
-#load {margin: auto;}
-
-#loopGrain {
-  margin: auto;
-}
-
-#grainSelect {
-  margin: auto;
-  padding-bottom: 5px;
-
-}
-
-#volumes {
-  /* height: 100%; */
-  margin: auto;
-}
-
-#generateParts {
-  margin: auto;
-  padding-bottom: 5px;
-}
-
-
 #dropdown {
   padding: 5px 0px 10px 0px;
   margin: auto;
 }
 
-#instruction {
-  padding-top: 10px;
-  margin: auto;
-}
-
-#grainsizetext {
-  margin-top: 10px;
-}
-
-#looptext {
+#controlsText {
   margin-top: 10px;
 }
 
 #file {
-  float: right;
-  padding: 10px 10px 10px 10px;
-  margin: auto
-}
-
-#sound {
   float: right;
   padding: 10px 10px 10px 10px;
   margin: auto
@@ -91,7 +47,6 @@ pre { text-align: center; font-family: Garamond; font-size: 16px; font-style: no
 #autoplay {
   margin: auto;
   padding-top: 20px;
-
 }
 
 .visualizers {
@@ -99,77 +54,76 @@ pre { text-align: center; font-family: Garamond; font-size: 16px; font-style: no
   padding: 15px 0px 15px 0px;
 }
 
-.grains {
-  padding: 15px 0px 15px 0px;
-  margin: auto;
-}
-.grains2 {
-  padding: 15px 0px 15px 0px;
-  margin: auto;
-}
-
 .meters {
   display: grid;
   grid-auto-flow: column;
-  /* padding: 15px 0px 15px 10px; */
   margin-left: 15px;
 }
 
 audio { width: 100%;}
 
-
 .columnleft{
-    float: left;
-    width: 20%;
-    background-color: #c93c20;
-    height: 100vh;
-    text-align: center
-    }
+  float: left;
+  width: 20%;
+  background-color: #c93c20;
+  height: 100vh;
+  text-align: center
+}
 
 .columncenterL {
-      float: left;
-      width: 18%;
-      background-color: #e8b848;
-      height: 100vh;
-      text-align: center
+  float: left;
+  width: 18%;
+  background-color: #e8b848;
+  height: 100vh;
+  text-align: center;
+}
 
-         }
 .columncenter {
   float: left;
   width: 18%;
   background-color: #c93c20;
   height: 100vh;
   text-align: center
-     }
+}
+
 .columncenterR {
   float: left;
   width: 26%;
   background-color: #e8b848;
   height: 100vh;
   text-align: center;
-        }
+}
 
 .columnright {
   float: left;
   width: 18%;
   background-color: #c93c20;
   height: 100vh;
-     }
+}
 
 .row:after {
         content: "";
          display: table;
          clear: both;
-         }
+}
 
 .controls {
   margin: auto;
-   /* padding: 10px 0px 10px 0px; */
    border-style: solid;
    border-color: #11249c;
    border-width: 1px;
-
 }
+
 .rack {
   margin: auto;
+}
+
+.radioText {
+  margin: auto;
+  padding-bottom: 5px;
+}
+
+[nexus-ui] {
+  width:100%;
+  height:100%;
 }
