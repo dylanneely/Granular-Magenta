@@ -88,9 +88,11 @@ pre { text-align: center; font-family: Garamond; font-size: 16px; font-style: no
   padding: 15px 0px 15px 0px;
 }
 
-/* #sketch-holder {
-  padding-bottom: 15px;
-} */
+#autoplay {
+  margin: auto;
+  padding-top: 20px;
+
+}
 
 .visualizers {
   margin: auto;

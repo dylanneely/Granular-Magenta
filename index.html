@@ -30,7 +30,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
     <h1 >
     <div class="row">
       <div class="columnleft">
-        <div class="circle" nexus-ui="TextButton" id="start">
+        <div nexus-ui="TextButton" id="start">
         </div>
         <div class="textbutton" id="loopGrain">
         </div>
@@ -96,7 +96,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
         Press Start in the top left to begin crafting sonic environments! <br><br>
         Sculpt sounds from the Sound Selector using the control pads. <br>
         <br> Choose new sounds by loading a file or capture your own with Record Input. <br>
-        <br> Create patterns with the synthesis selector, and control their speed and length with the sliders. <br>
+        <br> Create patterns with the synthesis selector, and control their length with the sliders. <br>
         <br> Record the output of the sculpted sounds back into a looping part with the Overdub button above. <br>
           </blockquote>
       </div>
@@ -122,14 +122,16 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <div class = "rack"nexus-ui ="slider" id ="sVolume8"></div>
             <pre>Drone Synth</pre >
           <div class = "rack"nexus-ui="slider" id ="droneVol"></div>
-            <pre >Grain Bus</pre >
+          <pre >Reverb Gain</pre >
+          <div class = "rack"nexus-ui="slider" id ="verbVol"></div>
+            <pre >Grain Bus Gain</pre >
           <div class = "rack"nexus-ui="slider" id ="grainVol"></div>
-            <pre >Synth Bus</pre >
+            <pre >Synth Bus Gain</pre >
           <div class = "rack" nexus-ui="slider" id ="synthVol"></div>
-          <pre>BPM: <span id="numBPM"></span> </pre >
-          <div class = "rack"nexus-ui="slider" id ="bpmSlider"></div>
           <pre>Length (Seconds): <span id="numLen"></span> </pre >
           <div class = "rack" nexus-ui="slider" id ="melLengthSlider"></div>
+          <div id="autoplay">
+          </div>
         </div>
       </div>
     </div>
