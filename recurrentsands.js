@@ -198,7 +198,7 @@ function drawBuffer() {
   p.strokeWeight(2);
   p.fill('rgba(220,220,220, 0)');
   p.rect(0, 0, cnvWidth, cnvHeight);
-  const bandSize = cnvWidth / buffer.length;
+  const bandSize = cnvWidth / bufData.length;
   p.stroke("#11249c");
   p.beginShape();
   for (let i = 0; i < bufData.length; i += 4) { // a bit less detail
