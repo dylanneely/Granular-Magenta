@@ -17,8 +17,8 @@ const actx  = Tone.context;
 const recDest  = actx.createMediaStreamDestination();
 const recorder = new MediaRecorder(recDest.stream);
 
-const meter = new Tone.Meter();
-const mic = new Tone.UserMedia().connect(meter);
+//const meter = new Tone.Meter();
+const mic = new Tone.UserMedia();//.connect(meter);
 mic.connect(recDest);
 
 Nexus.context = actx._context;
@@ -179,6 +179,7 @@ const s = ( sketch ) => {
   sketch.draw = () => {
       if (newBuf == false) {}
       else {
+        bufData = grainList[grainSelect].buffer.getChannelData(); //moved this here from drawbuffer, so it wouldn't need to be called as often
         drawLoop();
         newBuf = false;
       }
@@ -186,6 +187,7 @@ const s = ( sketch ) => {
 };
 let p = new p5(s, document.getElementById('sketch-holder'));
 
+let bufData;
 function drawBuffer() {
   p.clear();
   p.background(220);
@@ -196,12 +198,11 @@ function drawBuffer() {
   p.strokeWeight(2);
   p.fill('rgba(220,220,220, 0)');
   p.rect(0, 0, cnvWidth, cnvHeight);
-  const buffer = grainList[grainSelect].buffer.getChannelData();
   const bandSize = cnvWidth / buffer.length;
   p.stroke("#11249c");
   p.beginShape();
-  for (let i = 0; i < buffer.length; i += 4) { // a bit less detail
-    p.curveVertex(bandSize * i, p.map(buffer[i], -1, 1, cnvHeight, 0));
+  for (let i = 0; i < bufData.length; i += 4) { // a bit less detail
+    p.curveVertex(bandSize * i, p.map(bufData[i], -1, 1, cnvHeight, 0));
   }
   p.endShape();
 }
@@ -267,6 +268,16 @@ async function newGrainBuf(userAudioIndex) { //set buffer
     newBuf = true; //draw new buffer
   }
 
+// function pitchDetector () //TO DO: TRIGGERED AT BEGINNING OF GENERATE MELODY. WILL SET SEED PITCH
+// TRIED USING CREPE PORT TO ML5JS. HOWEVER, THE MODEL IS TRAINED AT 16KHZ SAMPLES, AND THE CLASS IS
+// CONSTRICTED TO ONLY WORK WITH MIC INPUT STREAM. WOULD NEED TO WRITE NEW CLASS - WILL USE FFT FOR NOW
+const pitchDetector = ml5.pitchDetection(
+  "./model/",
+  actx,
+  mic.stream,
+  modelLoaded
+);
+
 //AI GENERATION
 let melodyRnn = new music_rnn.MusicRNN( 'https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/melody_rnn');
 let melodyRnnLoaded = melodyRnn.initialize();
@@ -280,7 +291,7 @@ async function generateMelody() {
     totalQuantizedSteps: rhythmSeed.reduce(function(a, b){return a + b;}),
     quantizationInfo: { stepsPerQuarter: 4}, //speeds up, adds a bit of funkiness
   };
-  let steps = randomMIDIpitch(24, 60);
+  let steps = randomMIDIpitch(28, 60);
   let temperature = 0.9;
   let result = await melodyRnn.continueSequence(seed, steps, temperature);
   let combined = core.sequences.concatenate([seed, result]);
@@ -526,8 +537,8 @@ else {
 })
 //RECORD COMPUTER OUTPUT INTO BUFFER
 recordButton.on('change',async function(v) {
+  await Tone.start();
   if (v == true) {
-    await Tone.start();
     "Record Started"
     record();
   } else {
@@ -565,6 +576,12 @@ recordMic.on('change', async function(v) {
     mic.close();
   }
 })
+
+// function pitchDetector () //TO DO: TRIGGERED AT BEGINNING OF GENERATE MELODY. WILL SET SEED PITCH
+// TRIED USING CREPE PORT TO ML5JS. HOWEVER, THE MODEL IS TRAINED AT 16KHZ SAMPLES, AND THE CLASS IS
+// CONSTRICTED TO ONLY WORK WITH MIC INPUT STREAM. ADDITIONALLY, CURRENTLY USES DEPRECATED CREATESCRIPTPROCESSOR.
+//WOULD LIKE TO DEVELOP / CONTRIBUTE TO ML5JS TO MODERNIZE THIS CLASS AND INCLUDE FUNCTIONALITY FOR BUFFERS
+
 //CREATE AI PARTS WITH SYNTHESIS RADIOBUTTON
 generateParts.on('change', async function(v) {
   if (v > -1) {
