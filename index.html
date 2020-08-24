@@ -21,7 +21,7 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
     <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.19.0/es6/music_rnn.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@magenta/music@^1.19.0/es6/music_vae.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.1.9/p5.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/pitchfinder@2.3.1/lib/index.min.js"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/pitchfinder@2.3.1/lib/index.min.js"></script> -->
     <script src="recurrentsands.js" defer></script>
   </head>
   <body>
@@ -68,16 +68,22 @@ have to manually edit nexus-ui library to remove an outdated reference in WAAClo
           <p id="controlsText" >Start Position & Loop Size</p>
           <div class = "controls" nexus-ui ="position" id ="graincontrol1"></div>
           <p>Playback Rate & Detune</p>
-          <div class = "controls" nexus-ui ="position" id ="graincontrol2"></div>
+          <div class = "controls" nexus-ui ="position" id ="graincontrol2">
+          <div id="overlay"><small id="detuneText"></small></div>
+          </div>
           <div class="visualizers" nexus-ui"oscilloscope" id="oscilloscope"></div>
         </div>
       </div>
       <div class="columncenter">
         <div id="grains2">
           <p id="controlsText">Grain Size & Overlap</p>
-          <div class = "controls" nexus-ui ="position" id ="graincontrol3"></div>
+          <div class = "controls" nexus-ui ="position" id ="graincontrol3">
+          <div id="overlay"><small id="grainSizeText"></small></div>
+          </div>
           <p>Filter & Delay</p>
-          <div class = "controls" nexus-ui ="position" id ="graincontrol4"></div>
+          <div class = "controls" nexus-ui ="position" id ="graincontrol4">
+          <div id="overlay"><small id="filterText"></small></div>
+          </div>
         </div>
         <div class="visualizers" nexus-ui"spectrogram" id="spectrogram"></div>
       </div>

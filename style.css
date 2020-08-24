@@ -8,10 +8,37 @@ h3 { font-family: Garamond; font-size: 24px; font-style: normal; font-variant: n
 p {   text-align: center; font-family: Garamond; font-size: 18px; font-style: normal; font-variant: normal; font-weight: 500; line-height: 18px; }
 blockquote { font-family: Garamond; font-size: 14px; font-style: italic; font-variant: normal; font-weight: 400; line-height: 14px; }
 pre { text-align: center; font-family: Garamond; font-size: 16px; font-style: normal; font-variant: normal; font-weight: 500; line-height: 0px; }
+small { text-align: center; font-family: Garamond; font-size: 12px; font-style: normal; font-variant: normal; font-weight: 500; line-height: 24px; }
 
 #explanation {
   margin: auto;
   padding: 10px 15px 10px 15px;
+}
+
+#detuneText {
+  position: fixed;
+  display: none;
+  padding-left: 45px;
+  padding-top: 30px
+}
+
+#filterText {
+  position: fixed;
+  display: none;
+  padding-left: 45px;
+  padding-top: 30px
+}
+
+#grainSizeText {
+  position: fixed;
+  display: none;
+  padding-left: 35px;
+  padding-top: 30px
+}
+
+.overlay {
+  background-color: rgba(220, 220, 220, 0);
+  margin: auto;
 }
 
 #start {

@@ -16,12 +16,9 @@ const audio = document.querySelector('audio');
 const actx  = Tone.context;
 const recDest  = actx.createMediaStreamDestination();
 const recorder = new MediaRecorder(recDest.stream);
-
-//const meter = new Tone.Meter();
-const mic = new Tone.UserMedia();//.connect(meter);
-mic.connect(recDest);
-
 Nexus.context = actx._context;
+const mic = new Tone.UserMedia();
+mic.connect(recDest);
 
 const baseURL = "https://storage.googleapis.com/audioassets/";
 let bufList = {0: "Vessel1.wav", 1: "Bowl1.wav", 2: "Bowl2.wav", 3: "BattabangBell.wav", 4: "DianBell.wav", 5: "Frogs.wav", 6: "SolarSounder1.wav", 7: "WindWaves.wav"};
@@ -95,6 +92,7 @@ for (delay in delayList) {
 const ir = "".concat(baseURL, "SSet4N.wav"); //San Sabino Cathedral
 const verb = new Tone.Convolver(ir);
 
+
 //some variety of synths
 synthList[0] = new Tone.AMSynth();
 synthList[1] = new Tone.FMSynth();
@@ -141,20 +139,20 @@ let rhythmSeed = [randomMIDIpitch(1, 2), randomMIDIpitch(1, 2),randomMIDIpitch(1
 console.log(seedChordMIDI, rhythmSeed)
 
 //CONNECT EVERYTHING UP
-const grainBusGain = new Tone.Gain(1).toDestination();
-const synthBusGain = new Tone.Gain(1).toDestination();
+const grainBusGain = new Tone.Gain(1);
+const synthBusGain = new Tone.Gain(1);
 const verbGain = new Tone.Gain(1).toDestination();
-grainBusGain.connect(recDest); //connect these independent of verb to avoid muddying output record
-synthBusGain.connect(recDest);
-synthDrone.chain(sVolumeList[8], autoFilter, synthBusGain, verb, verbGain);
+const compressor = new Tone.Compressor(-40, 3).toDestination(); //master-bus compressor
+compressor.knee = 30;
+synthDrone.chain(sVolumeList[8], autoFilter, synthBusGain, verb, verbGain, compressor);
 synthDrone.chain(sVolumeList[8], autoFilter, synthBusGain);
 
 for (let i = 0; i < grainList.length; i++) { //handle grain and synth routing together
-    grainList[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], grainBusGain);
-    grainList[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], grainBusGain, verb, verbGain);
+    grainList[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], grainBusGain, recDest); //avoid master-bus FX for recording
+    grainList[i].chain(pitchShiftList[i], delayList[i], gFilterList[i], gVolumeList[i], grainBusGain, verb, verbGain, compressor); //separate wet control for master-bus verb
     grainList[i].sync();
     synthList[i].chain(phaserList[i], sFilterList[i], sVolumeList[i], synthBusGain);
-    synthList[i].chain(phaserList[i], sFilterList[i], sVolumeList[i], synthBusGain,  verb, verbGain);
+    synthList[i].chain(phaserList[i], sFilterList[i], sVolumeList[i], synthBusGain,  verb, verbGain, compressor);
     synthList[i].sync();
   }
 
@@ -179,15 +177,16 @@ const s = ( sketch ) => {
   sketch.draw = () => {
       if (newBuf == false) {}
       else {
-        bufData = grainList[grainSelect].buffer.getChannelData(); //moved this here from drawbuffer, so it wouldn't need to be called as often
+        bufData = grainList[grainSelect].buffer.getChannelData(); //moved this here from drawbuffer, so it would only need to be called when there's a new buffer, and not everytime the loop constraints need to be redrawn
         drawLoop();
+        clearControlText();
         newBuf = false;
       }
   };
 };
 let p = new p5(s, document.getElementById('sketch-holder'));
 
-let bufData;
+let bufData = grainList[grainSelect].buffer.getChannelData();
 function drawBuffer() {
   p.clear();
   p.background(220);
@@ -206,6 +205,7 @@ function drawBuffer() {
   }
   p.endShape();
 }
+
 function drawLoop() { //redrawing buffer on every call slows down audio when redrawing loop using position dial.
                       //What's the solution without multiple threads? I've tried slightly slowing frame rate, but don't want drawing to look laggy
                       //Even a 1fps rate doesn't solve problem w/r/t audio. Not drawing buffer as often helps, but setting the loop needs to feel responsive.
@@ -268,11 +268,6 @@ async function newGrainBuf(userAudioIndex) { //set buffer
     newBuf = true; //draw new buffer
   }
 
-// function pitchDetector () //TO DO: TRIGGERED AT BEGINNING OF GENERATE MELODY. WILL SET SEED PITCH
-// TRIED USING CREPE PORT TO ML5JS. HOWEVER, THE MODEL IS TRAINED AT 16KHZ SAMPLES, AND THE CLASS IS
-// CONSTRICTED TO ONLY WORK WITH MIC INPUT STREAM. WOULD NEED TO WRITE NEW CLASS - WILL USE FFT FOR NOW
-//TRY USING PITCHFINDER JS INSTEAD
-
 //AI GENERATION
 let melodyRnn = new music_rnn.MusicRNN( 'https://storage.googleapis.com/magentadata/js/checkpoints/music_rnn/melody_rnn');
 let melodyRnnLoaded = melodyRnn.initialize();
@@ -287,7 +282,7 @@ async function generateMelody() {
     quantizationInfo: { stepsPerQuarter: 4}, //speeds up, adds a bit of funkiness
   };
   let steps = randomMIDIpitch(28, 60);
-  let temperature = 0.9;
+  let temperature = 1.1; //often lands on same note repeatedly with lower temp
   let result = await melodyRnn.continueSequence(seed, steps, temperature);
   let combined = core.sequences.concatenate([seed, result]);
   start_note = combined.notes[0].pitch;
@@ -400,11 +395,11 @@ grainsControl.graincontrol1.x = 0.0;
 grainsControl.graincontrol2.colorize("fill","#DCDCDC");
 grainsControl.graincontrol2.colorize("accent", "#11249c");
 grainsControl.graincontrol2.stepX = 0.01;
-grainsControl.graincontrol2.stepY = 1;
+grainsControl.graincontrol2.stepY = 0.1;
 grainsControl.graincontrol2.y = 0; //detune
-grainsControl.graincontrol2.x = 1.0; //playback
-grainsControl.graincontrol2.minY = -1200;
-grainsControl.graincontrol2.maxY = 1200;
+grainsControl.graincontrol2.x = 0.1; //playback
+grainsControl.graincontrol2.minY = -12;
+grainsControl.graincontrol2.maxY = 12;
 grainsControl.graincontrol2.minX = 0.1;
 grainsControl.graincontrol2.maxX = 10;
 //GRAIN SIZE & OVERLAP
@@ -413,7 +408,7 @@ grainsControl2.graincontrol3.colorize("accent", "#11249c");
 grainsControl2.graincontrol3.x = 0.2;
 grainsControl2.graincontrol3.maxX = 2.0;
 grainsControl2.graincontrol3.stepX = 0.001;
-grainsControl2.graincontrol3.stepY = 0.001;
+grainsControl2.graincontrol3.stepY = 0.01;
 grainsControl2.graincontrol3.y = 0.1;
 grainsControl2.graincontrol3.minY = 0.01;
 grainsControl2.graincontrol3.minX = 0.01;
@@ -506,7 +501,7 @@ for (m in meterList) {
   meterList[m].colorize("fill", "#DCDCDC");
   meterList[m].colorize("accent", "#11249c");
   if (m < 8) {
-   meterList[m].connect(gVolumeList[m], 1);
+   meterList[m].connect(gVolumeList[m], 1); //NexusUI uses patching logic for connections, hence the visualizer connecting to the audio, rather than vice versa
  } else if (m >= 8) {
    meterList[m].connect(sVolumeList[m-8], 1);
  }
@@ -571,12 +566,6 @@ recordMic.on('change', async function(v) {
     mic.close();
   }
 })
-
-// function pitchDetector () //TO DO: TRIGGERED AT BEGINNING OF GENERATE MELODY. WILL SET SEED PITCH
-// TRIED USING CREPE PORT TO ML5JS. HOWEVER, THE MODEL IS TRAINED AT 16KHZ SAMPLES, AND THE CLASS IS
-// CONSTRICTED TO ONLY WORK WITH MIC INPUT STREAM. ADDITIONALLY, CURRENTLY USES DEPRECATED CREATESCRIPTPROCESSOR.
-//WOULD LIKE TO DEVELOP / CONTRIBUTE TO ML5JS TO MODERNIZE THIS CLASS AND INCLUDE FUNCTIONALITY FOR BUFFERS
-
 //CREATE AI PARTS WITH SYNTHESIS RADIOBUTTON
 generateParts.on('change', async function(v) {
   if (v > -1) {
@@ -670,6 +659,14 @@ volumes.grainVol.on('change', function(v) {grainBusGain.gain.rampTo(v, 0.1)});
 volumes.verbVol.on('change', function(v){verbGain.gain.rampTo(v, 0.1)});
 volumes.melLengthSlider.on('change', function(v){melLength = v; console.log(melLength)});
 
+function clearControlText() {
+  Tone.Transport.schedule((time) => { //delay so that text doesn't flicker when player is moving controls
+    document.getElementById("detuneText").style.display = "none";
+    document.getElementById("filterText").style.display = "none";
+    document.getElementById("grainSizeText").style.display = "none";
+  }, Tone.now() + 2)
+}
+
 grainsControl.graincontrol1.on('change', function(v)
         {let startend = loopsize(v.x, v.y); grainList[grainSelect].loopStart = startend[0]; grainList[grainSelect].loopEnd = startend[1];
          if (startend[0] > startend[1]) {grainList[grainSelect].reverse = true;} else {grainList[grainSelect].reverse = false;}
@@ -681,21 +678,27 @@ grainsControl.graincontrol1.on('change', function(v)
               grainsControlRecall[grainSelect][0][0] = v.x; //set recall values
               grainsControlRecall[grainSelect][0][1] = v.y;
            }
-         }, Tone.now() + 0.1);
+         }, Tone.now() + 0.05);
      });
 grainsControl.graincontrol2.on('change', function(v)
-        {grainList[grainSelect].playbackRate = v.x; grainList[grainSelect].detune = v.y;
+        {grainList[grainSelect].playbackRate = v.x; grainList[grainSelect].detune = v.y * 100;
+          document.getElementById("detuneText").style.display = "block";
+          document.getElementById("detuneText").innerHTML = "Detune: " + (v.y * 100).toFixed(0) + " Cents <br><br><br><br>  Playback Rate: " + v.x.toFixed(2);
           let oldX = v.x; //sets the recall when the player stops moving the control
           let oldY = v.y;
           Tone.Transport.schedule((time) => {
           if (oldX == v.x && oldY == v.y) {
                grainsControlRecall[grainSelect][1][0] = v.x; //set recall values
                grainsControlRecall[grainSelect][1][1] = v.y;
+               clearControlText();
             }
           }, Tone.now() + 0.1);
          });
 grainsControl2.graincontrol3.on('change', function(v)
         {	grainList[grainSelect].grainSize = v.x; grainList[grainSelect].overlap = v.y;
+          clearControlText();
+          document.getElementById("grainSizeText").style.display = "block";
+          document.getElementById("grainSizeText").innerHTML = "Grain Size: " + v.x.toFixed(2) + " Seconds <br><br><br><br>  Overlap: " + v.y.toFixed(2) + " Seconds";
           let oldX = v.x; //sets the recall when the player stops moving the control
           let oldY = v.y;
           Tone.Transport.schedule((time) => {
@@ -708,15 +711,21 @@ grainsControl2.graincontrol3.on('change', function(v)
 grainsControl2.graincontrol4.on('change', function(v) //Filter and Delay Controls
         {filterCutoff = v.x;  gFilterList[grainSelect].frequency.value = filterCutoff;
           //use Y coordinates to set delay wet level up to a point, and then add additional feedback
-          if (v.y >= 0.8) {delayWet = 1; delayFeedback = (v.y - 0.1);}
-          if (v.y < 0.8) {delayWet = v.y * 1.25;}
+          if (v.y >= 0.8) {delayWet = 1; delayFeedback = (v.y - 0.1);
+            document.getElementById("filterText").innerHTML = "Filter Cutoff: " + v.x + " Hz <br><br><br><br> Feedback: " + (delayFeedback * 100).toFixed(0) + "%";
+          }
+          if (v.y < 0.8) {delayWet = v.y * 1.25;
+            document.getElementById("filterText").innerHTML = "Filter Cutoff: " + v.x + " Hz <br><br><br><br>  Delay: " + (delayWet * 100).toFixed(0) + "%";
+          }
           delayList[grainSelect].wet.value = delayWet; delayList[grainSelect].feedback.value = delayFeedback;
+          document.getElementById("filterText").style.display = "block";
           let oldX = v.x; //sets the recall when the player stops moving the control
           let oldY = v.y;
           Tone.Transport.schedule((time) => {
           if (oldX == v.x && oldY == v.y) {
                grainsControlRecall[grainSelect][3][0] = v.x; //set recall values
                grainsControlRecall[grainSelect][3][1] = v.y;
+               clearControlText();
             }
           }, Tone.now() + 0.1);
         });
