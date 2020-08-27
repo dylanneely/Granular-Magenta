@@ -1,6 +1,6 @@
 # Recurrent Sands Browser-Based Music Application
 
-Recurrent Sands is a browser-based musical instrument created as part of the "BitRate: Machine Learning & Music Series" contest hosted by Gray Area and the Magenta team at Google Research.
+Recurrent Sands is a browser-based musical instrument created as part of the "BitRate: Machine Learning & Music Series" contest hosted by Gray Area and the Magenta team at Google Research. It's hosted live at https://www.gebrauchsmusik.com/recurrentsands/. 
 
 The instrument connects two exciting areas of development within the world of electronic music: granular synthesis and machine learning. I have attempted to reconcile transparency and a user-friendly aesthetic, avoiding technical language wherever possible in the interface. Below is an overview of the instrument and its techniques:
 
